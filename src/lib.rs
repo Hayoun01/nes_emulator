@@ -288,7 +288,11 @@ impl CPU {
                     let v = self.fetch_byte(&mut cycles, mem);
                     self.ldx(v);
                 }
-                Ok(Instruction::LdxZPG) => {}
+                Ok(Instruction::LdxZPG) => {
+                    let addr = self.fetch_byte(&mut cycles, mem);
+                    let data = self.read_byte_zp(&mut cycles, addr, mem);
+                    self.ldx(data);
+                }
                 Ok(Instruction::LdxZPY) => {}
                 Ok(Instruction::LdxABS) => {}
                 Ok(Instruction::LdxABY) => {}
@@ -419,7 +423,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = 0xA9;
+        mem[0xFFFC] = Instruction::LdaIMM.into();
         mem[0xFFFD] = 0x0;
         let cycle_used = cpu.execute(2, &mut mem);
         assert_eq!(cycle_used, 2);
@@ -432,7 +436,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = 0xA9;
+        mem[0xFFFC] = Instruction::LdaIMM.into();
         mem[0xFFFD] = 0x84;
         let cycle_used = cpu.execute(2, &mut mem);
         assert_eq!(cycle_used, 2);
@@ -445,7 +449,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = 0xA9;
+        mem[0xFFFC] = Instruction::LdaIMM.into();
         mem[0xFFFD] = 0x2A;
         let cycle_used = cpu.execute(2, &mut mem);
         assert_eq!(cycle_used, 2);
@@ -458,7 +462,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = 0xA5;
+        mem[0xFFFC] = Instruction::LdaZPG.into();
         mem[0xFFFD] = 0x42;
         mem[0x0042] = 0x2A;
         let cycle_used = cpu.execute(3, &mut mem);
@@ -472,7 +476,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = 0xB5;
+        mem[0xFFFC] = Instruction::LdaZPX.into();
         mem[0xFFFD] = 0x40;
         mem[0x0042] = 0x2A;
         cpu.x = 0x2;
@@ -487,7 +491,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = 0xB5;
+        mem[0xFFFC] = Instruction::LdaZPX.into();
         mem[0xFFFD] = 0x43;
         mem[0x0042] = 0x2A;
         cpu.x = 0xFF;
@@ -502,7 +506,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = 0xAD;
+        mem[0xFFFC] = Instruction::LdaABS.into();
         mem[0xFFFD] = 0x42;
         mem[0xFFFE] = 0x41; // Ox4142
         mem[0x4142] = 0x2A;
@@ -517,7 +521,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdaABX as Byte;
+        mem[0xFFFC] = Instruction::LdaABX.into();
         mem[0xFFFD] = 0x41;
         mem[0xFFFE] = 0x42; // 0x4241
         mem[0x4242] = 0x2A;
@@ -533,7 +537,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdaABX as Byte;
+        mem[0xFFFC] = Instruction::LdaABX.into();
         mem[0xFFFD] = 0xF0;
         mem[0xFFFE] = 0x02; // 0x0300
         mem[0x0300] = 0x2A;
@@ -549,7 +553,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdaABY as Byte;
+        mem[0xFFFC] = Instruction::LdaABY.into();
         mem[0xFFFD] = 0x41;
         mem[0xFFFE] = 0x42; // 0x4241
         mem[0x4242] = 0x2A;
@@ -565,7 +569,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdaABY as Byte;
+        mem[0xFFFC] = Instruction::LdaABY.into();
         mem[0xFFFD] = 0xF0;
         mem[0xFFFE] = 0x02; // 0x0300
         mem[0x0300] = 0x2A;
@@ -581,7 +585,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdaIDX as Byte;
+        mem[0xFFFC] = Instruction::LdaIDX.into();
         mem[0xFFFD] = 0x20;
         mem[0x0024] = 0x00;
         mem[0x0025] = 0x80;
@@ -598,7 +602,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdaIDY as Byte;
+        mem[0xFFFC] = Instruction::LdaIDY.into();
         mem[0xFFFD] = 0x20;
         mem[0x0020] = 0x00;
         mem[0x0021] = 0x80;
@@ -615,7 +619,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdaIDY as Byte;
+        mem[0xFFFC] = Instruction::LdaIDY.into();
         mem[0xFFFD] = 0x20;
         mem[0x0020] = 0x10;
         mem[0x0021] = 0x80;
@@ -632,7 +636,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = 0x20;
+        mem[0xFFFC] = Instruction::JsrABS.into();
         mem[0xFFFD] = 0x80;
         mem[0xFFFE] = 0x80;
         mem[0x8080] = 0xA9;
@@ -652,7 +656,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdxIMM as Byte;
+        mem[0xFFFC] = Instruction::LdxIMM.into();
         mem[0xFFFD] = 0x0;
         let cycle_used = cpu.execute(2, &mut mem);
         assert_eq!(cycle_used, 2);
@@ -665,7 +669,7 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdxIMM as Byte;
+        mem[0xFFFC] = Instruction::LdxIMM.into();
         mem[0xFFFD] = 0x84;
         let cycle_used = cpu.execute(2, &mut mem);
         assert_eq!(cycle_used, 2);
@@ -678,11 +682,25 @@ pub mod test {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
-        mem[0xFFFC] = Instruction::LdxIMM as Byte;
+        mem[0xFFFC] = Instruction::LdxIMM.into();
         mem[0xFFFD] = 0x2A;
         let cycle_used = cpu.execute(2, &mut mem);
         assert_eq!(cycle_used, 2);
         assert_eq!(cpu.x, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldx_zero_page_load_value_to_register_x() {
+        let mut mem = Mem::new();
+        let mut cpu = CPU::new();
+        cpu.reset(&mut mem);
+        mem[0xFFFC] = 0xA5;
+        mem[0xFFFD] = 0x42;
+        mem[0x0042] = 0x2A;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(cpu.a, 0x2A);
         assert!(cpu.flag.is_empty());
     }
 }
