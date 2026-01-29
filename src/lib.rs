@@ -72,8 +72,34 @@ enum Instruction {
     /// ### Load X Register Absolute Y
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0xB6 | 3 | 4 (+1 if page crossed) |
+    /// | 0xBE | 3 | 4 (+1 if page crossed) |
     LdxABY = 0xBE,
+    // * [LDY] Load Y Register
+    /// ### Load Y Register Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xA0 | 2 | 2 |
+    LdyIMM = 0xA0,
+    /// ### Load Y Register Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xA4 | 2 | 3 |
+    LdyZPG = 0xA4,
+    /// ### Load Y Register Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xB4 | 2 | 4 |
+    LdyZPX = 0xB4,
+    /// ### Load Y Register Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xAC | 3 | 4 |
+    LdyABS = 0xAC,
+    /// ### Load Y Register Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xBC | 3 | 4 (+1 if page crossed) |
+    LdyABX = 0xBC,
     // * [JSR] Jump to Subroutine
     /// ### Jump to Subroutine Absolute
     /// | Opcode | Bytes | Cycles |
@@ -102,6 +128,12 @@ impl TryFrom<Byte> for Instruction {
             x if x == Self::LdxZPY as Byte => Ok(Self::LdxZPY),
             x if x == Self::LdxABS as Byte => Ok(Self::LdxABS),
             x if x == Self::LdxABY as Byte => Ok(Self::LdxABY),
+            // * [LDY]
+            x if x == Self::LdyIMM as Byte => Ok(Self::LdyIMM),
+            x if x == Self::LdyZPG as Byte => Ok(Self::LdyZPG),
+            x if x == Self::LdyZPX as Byte => Ok(Self::LdyZPX),
+            x if x == Self::LdyABS as Byte => Ok(Self::LdyABS),
+            x if x == Self::LdyABX as Byte => Ok(Self::LdyABX),
             // * [JSR]
             x if x == Self::JsrABS as Byte => Ok(Self::JsrABS),
             _ => Err("unknown CPU instruction"),
@@ -293,9 +325,58 @@ impl CPU {
                     let data = self.read_byte_zp(&mut cycles, addr, mem);
                     self.ldx(data);
                 }
-                Ok(Instruction::LdxZPY) => {}
-                Ok(Instruction::LdxABS) => {}
-                Ok(Instruction::LdxABY) => {}
+                Ok(Instruction::LdxZPY) => {
+                    let mut addr = self.fetch_byte(&mut cycles, mem);
+                    addr = addr.wrapping_add(self.y);
+                    cycles -= 1;
+                    let v = self.read_byte_zp(&mut cycles, addr, mem);
+                    self.ldx(v);
+                }
+                Ok(Instruction::LdxABS) => {
+                    let addr = self.fetch_word(&mut cycles, mem);
+                    let v = self.read_byte(&mut cycles, addr, mem);
+                    self.ldx(v);
+                }
+                Ok(Instruction::LdxABY) => {
+                    let mut addr = self.fetch_word(&mut cycles, mem);
+                    if Self::page_crossed(addr, self.y) {
+                        cycles -= 1;
+                    }
+                    addr = addr.wrapping_add(self.y as Word);
+                    let v = self.read_byte(&mut cycles, addr, mem);
+                    self.ldx(v);
+                }
+                // * LDX Instructions
+                Ok(Instruction::LdyIMM) => {
+                    let v = self.fetch_byte(&mut cycles, mem);
+                    self.ldy(v);
+                }
+                Ok(Instruction::LdyZPG) => {
+                    let addr = self.fetch_byte(&mut cycles, mem);
+                    let v = self.read_byte_zp(&mut cycles, addr, mem);
+                    self.ldy(v);
+                }
+                Ok(Instruction::LdyZPX) => {
+                    let mut addr = self.fetch_byte(&mut cycles, mem);
+                    addr = addr.wrapping_add(self.x);
+                    cycles -= 1;
+                    let v = self.read_byte_zp(&mut cycles, addr, mem);
+                    self.ldy(v);
+                }
+                Ok(Instruction::LdyABS) => {
+                    let addr = self.fetch_word(&mut cycles, mem);
+                    let v = self.read_byte(&mut cycles, addr, mem);
+                    self.ldy(v);
+                }
+                Ok(Instruction::LdyABX) => {
+                    let mut addr = self.fetch_word(&mut cycles, mem);
+                    if Self::page_crossed(addr, self.x) {
+                        cycles -= 1;
+                    }
+                    addr = addr.wrapping_add(self.x as Word);
+                    let v = self.read_byte(&mut cycles, addr, mem);
+                    self.ldy(v);
+                }
                 // * JSR Instructions
                 Ok(Instruction::JsrABS) => {
                     let addr = self.fetch_word(&mut cycles, mem);
@@ -331,6 +412,15 @@ impl CPU {
         }
     }
 
+    fn ldy_set_status(&mut self) {
+        if self.y == 0 {
+            self.flag.insert(Flag::ZERO);
+        }
+        if (self.y & 0b10000000) > 0 {
+            self.flag.insert(Flag::NEGATIVE);
+        }
+    }
+
     fn lda(&mut self, v: u8) {
         self.a = v;
         self.lda_set_status();
@@ -339,6 +429,11 @@ impl CPU {
     fn ldx(&mut self, v: u8) {
         self.x = v;
         self.ldx_set_status();
+    }
+
+    fn ldy(&mut self, v: u8) {
+        self.y = v;
+        self.ldy_set_status();
     }
 
     fn fetch_byte(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
@@ -353,7 +448,7 @@ impl CPU {
         *cycles -= 1;
         data
     }
-    
+
     fn read_byte_zp(&mut self, cycles: &mut u32, addr: Byte, mem: &mut Mem) -> Byte {
         let data = mem[addr as usize];
         *cycles -= 1;
@@ -397,11 +492,16 @@ pub mod test {
 
     use crate::*;
 
-    #[test]
-    fn cpu_initialized_properly() {
+    fn setup_cpu_mem() -> (CPU, Mem) {
         let mut mem = Mem::new();
         let mut cpu = CPU::new();
         cpu.reset(&mut mem);
+        (cpu, mem)
+    }
+
+    #[test]
+    fn cpu_initialized_properly() {
+        let (cpu, mem) = setup_cpu_mem();
         assert_eq!(cpu.pc, 0xFFFC);
         assert_eq!(cpu.sp, 0xFF);
         assert!(cpu.flag.is_empty());
@@ -411,18 +511,14 @@ pub mod test {
     #[test]
     #[should_panic(expected = "unknown CPU instruction")]
     fn invalid_cpu_instruction() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = 0x0;
         cpu.execute(1, &mut mem);
     }
 
     #[test]
     fn lda_immediate_load_zero_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaIMM.into();
         mem[0xFFFD] = 0x0;
         let cycle_used = cpu.execute(2, &mut mem);
@@ -433,9 +529,7 @@ pub mod test {
 
     #[test]
     fn lda_immediate_load_negative_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaIMM.into();
         mem[0xFFFD] = 0x84;
         let cycle_used = cpu.execute(2, &mut mem);
@@ -446,9 +540,7 @@ pub mod test {
 
     #[test]
     fn lda_immediate_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaIMM.into();
         mem[0xFFFD] = 0x2A;
         let cycle_used = cpu.execute(2, &mut mem);
@@ -459,9 +551,7 @@ pub mod test {
 
     #[test]
     fn lda_zero_page_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaZPG.into();
         mem[0xFFFD] = 0x42;
         mem[0x0042] = 0x2A;
@@ -473,9 +563,7 @@ pub mod test {
 
     #[test]
     fn lda_zero_page_x_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaZPX.into();
         mem[0xFFFD] = 0x40;
         mem[0x0042] = 0x2A;
@@ -488,9 +576,7 @@ pub mod test {
 
     #[test]
     fn lda_zero_page_x_must_wrap_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaZPX.into();
         mem[0xFFFD] = 0x43;
         mem[0x0042] = 0x2A;
@@ -503,9 +589,7 @@ pub mod test {
 
     #[test]
     fn lda_abs_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaABS.into();
         mem[0xFFFD] = 0x42;
         mem[0xFFFE] = 0x41; // Ox4142
@@ -518,9 +602,7 @@ pub mod test {
 
     #[test]
     fn lda_abx_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaABX.into();
         mem[0xFFFD] = 0x41;
         mem[0xFFFE] = 0x42; // 0x4241
@@ -534,9 +616,7 @@ pub mod test {
 
     #[test]
     fn lda_abx_cross_page_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaABX.into();
         mem[0xFFFD] = 0xF0;
         mem[0xFFFE] = 0x02; // 0x0300
@@ -550,9 +630,7 @@ pub mod test {
 
     #[test]
     fn lda_aby_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaABY.into();
         mem[0xFFFD] = 0x41;
         mem[0xFFFE] = 0x42; // 0x4241
@@ -566,9 +644,7 @@ pub mod test {
 
     #[test]
     fn lda_aby_cross_page_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaABY.into();
         mem[0xFFFD] = 0xF0;
         mem[0xFFFE] = 0x02; // 0x0300
@@ -582,9 +658,7 @@ pub mod test {
 
     #[test]
     fn lda_idx_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaIDX.into();
         mem[0xFFFD] = 0x20;
         mem[0x0024] = 0x00;
@@ -599,9 +673,7 @@ pub mod test {
 
     #[test]
     fn lda_idy_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaIDY.into();
         mem[0xFFFD] = 0x20;
         mem[0x0020] = 0x00;
@@ -616,9 +688,7 @@ pub mod test {
 
     #[test]
     fn lda_idy_cross_page_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdaIDY.into();
         mem[0xFFFD] = 0x20;
         mem[0x0020] = 0x10;
@@ -633,9 +703,7 @@ pub mod test {
 
     #[test]
     fn jsr_absolute_load_value_to_register_a() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::JsrABS.into();
         mem[0xFFFD] = 0x80;
         mem[0xFFFE] = 0x80;
@@ -653,9 +721,7 @@ pub mod test {
 
     #[test]
     fn ldx_immediate_load_zero_value_to_register_x() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdxIMM.into();
         mem[0xFFFD] = 0x0;
         let cycle_used = cpu.execute(2, &mut mem);
@@ -666,9 +732,7 @@ pub mod test {
 
     #[test]
     fn ldx_immediate_load_negative_value_to_register_x() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdxIMM.into();
         mem[0xFFFD] = 0x84;
         let cycle_used = cpu.execute(2, &mut mem);
@@ -679,9 +743,7 @@ pub mod test {
 
     #[test]
     fn ldx_immediate_load_value_to_register_x() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
+        let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::LdxIMM.into();
         mem[0xFFFD] = 0x2A;
         let cycle_used = cpu.execute(2, &mut mem);
@@ -692,15 +754,166 @@ pub mod test {
 
     #[test]
     fn ldx_zero_page_load_value_to_register_x() {
-        let mut mem = Mem::new();
-        let mut cpu = CPU::new();
-        cpu.reset(&mut mem);
-        mem[0xFFFC] = 0xA5;
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdxZPG.into();
         mem[0xFFFD] = 0x42;
         mem[0x0042] = 0x2A;
         let cycle_used = cpu.execute(3, &mut mem);
         assert_eq!(cycle_used, 3);
-        assert_eq!(cpu.a, 0x2A);
+        assert_eq!(cpu.x, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldx_zero_page_y_load_value_to_register_x() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdxZPY.into();
+        mem[0xFFFD] = 0x40;
+        mem[0x0042] = 0x2A;
+        cpu.y = 0x2;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.x, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldx_abs_load_value_to_register_x() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdxABS.into();
+        mem[0xFFFD] = 0x42; // lo
+        mem[0xFFFE] = 0x41; // Ox4142
+        mem[0x4142] = 0x2A;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.x, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldx_aby_load_value_to_register_x() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdxABY.into();
+        mem[0xFFFD] = 0x41;
+        mem[0xFFFE] = 0x42; // 0x4241
+        mem[0x4242] = 0x2A;
+        cpu.y = 0x01;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.x, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldx_aby_cross_page_load_value_to_register_x() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdxABY.into();
+        mem[0xFFFD] = 0xF0;
+        mem[0xFFFE] = 0x02; // 0x0300
+        mem[0x0300] = 0x2A;
+        cpu.y = 0x10;
+        let cycle_used = cpu.execute(5, &mut mem);
+        assert_eq!(cycle_used, 5);
+        assert_eq!(cpu.x, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldy_immediate_load_zero_value_to_register_y() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdyIMM.into();
+        mem[0xFFFD] = 0x0;
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
+        assert_eq!(cpu.y, 0x0);
+        assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
+    }
+
+    #[test]
+    fn ldy_immediate_load_negative_value_to_register_y() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdyIMM.into();
+        mem[0xFFFD] = 0x84;
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
+        assert_eq!(cpu.y, 0x84);
+        assert_eq!(cpu.flag.bits(), Flag::NEGATIVE.bits());
+    }
+
+    #[test]
+    fn ldy_immediate_load_value_to_register_y() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdyIMM.into();
+        mem[0xFFFD] = 0x2A;
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
+        assert_eq!(cpu.y, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldy_zero_page_load_value_to_register_y() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdyZPG.into();
+        mem[0xFFFD] = 0x42;
+        mem[0x0042] = 0x2A;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(cpu.y, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldy_zero_page_x_load_value_to_register_y() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdyZPX.into();
+        mem[0xFFFD] = 0x40;
+        mem[0x0042] = 0x2A;
+        cpu.x = 0x2;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.y, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldy_abs_load_value_to_register_y() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdyABS.into();
+        mem[0xFFFD] = 0x42; // lo
+        mem[0xFFFE] = 0x41; // Ox4142
+        mem[0x4142] = 0x2A;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.y, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldy_abx_load_value_to_register_y() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdyABX.into();
+        mem[0xFFFD] = 0x41;
+        mem[0xFFFE] = 0x42; // 0x4241
+        mem[0x4242] = 0x2A;
+        cpu.x = 0x01;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.y, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn ldy_abx_cross_page_load_value_to_register_y() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::LdyABX.into();
+        mem[0xFFFD] = 0xF0;
+        mem[0xFFFE] = 0xFF; // 0xFFF0
+        mem[0x0000] = 0x2A;
+        cpu.x = 0x10;
+        let cycle_used = cpu.execute(5, &mut mem);
+        assert_eq!(cycle_used, 5);
+        assert_eq!(cpu.y, 0x2A);
         assert!(cpu.flag.is_empty());
     }
 }
