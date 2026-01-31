@@ -262,56 +262,37 @@ impl CPU {
                     self.lda(fetched_byte);
                 }
                 Ok(Instruction::LdaZPG) => {
-                    let zero_page_addr = self.fetch_byte(&mut cycles, mem);
-                    let v = self.read_byte_zp(&mut cycles, zero_page_addr, mem);
+                    let addr = self.addr_zero_page(&mut cycles, mem);
+                    let v = self.read_byte_zp(&mut cycles, addr, mem);
                     self.lda(v);
                 }
                 Ok(Instruction::LdaZPX) => {
-                    let zero_page_addr = self.fetch_byte(&mut cycles, mem).wrapping_add(self.x);
-                    cycles -= 1;
-                    let v = self.read_byte_zp(&mut cycles, zero_page_addr, mem);
+                    let addr = self.addr_zero_page_x(&mut cycles, mem);
+                    let v = self.read_byte_zp(&mut cycles, addr, mem);
                     self.lda(v);
-                    dbg!(self.a);
                 }
                 Ok(Instruction::LdaABS) => {
-                    let addr = self.fetch_word(&mut cycles, mem);
+                    let addr = self.addr_absolute(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.lda(v);
-                    dbg!(self.a);
                 }
                 Ok(Instruction::LdaABX) => {
-                    let mut addr = self.fetch_word(&mut cycles, mem);
-                    if Self::page_crossed(addr, self.x) {
-                        cycles -= 1;
-                    }
-                    addr = addr.wrapping_add(self.x as Word);
+                    let addr = self.addr_absolute_x(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.lda(v);
                 }
                 Ok(Instruction::LdaABY) => {
-                    let mut addr = self.fetch_word(&mut cycles, mem);
-                    if Self::page_crossed(addr, self.y) {
-                        cycles -= 1;
-                    }
-                    addr = addr.wrapping_add(self.y as Word);
+                    let addr = self.addr_absolute_y(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.lda(v);
                 }
                 Ok(Instruction::LdaIDX) => {
-                    let mut addr = self.fetch_byte(&mut cycles, mem);
-                    addr = addr.wrapping_add(self.x);
-                    cycles -= 1;
-                    let addr = self.read_word_zp(&mut cycles, addr, mem);
+                    let addr = self.addr_indirect_x(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.lda(v);
                 }
                 Ok(Instruction::LdaIDY) => {
-                    let addr = self.fetch_byte(&mut cycles, mem);
-                    let mut addr = self.read_word_zp(&mut cycles, addr, mem);
-                    if Self::page_crossed(addr, self.y) {
-                        cycles -= 1;
-                    }
-                    addr = addr.wrapping_add(self.y as Word);
+                    let addr = self.addr_indirect_y(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.lda(v);
                 }
@@ -321,28 +302,22 @@ impl CPU {
                     self.ldx(v);
                 }
                 Ok(Instruction::LdxZPG) => {
-                    let addr = self.fetch_byte(&mut cycles, mem);
+                    let addr = self.addr_zero_page(&mut cycles, mem);
                     let data = self.read_byte_zp(&mut cycles, addr, mem);
                     self.ldx(data);
                 }
                 Ok(Instruction::LdxZPY) => {
-                    let mut addr = self.fetch_byte(&mut cycles, mem);
-                    addr = addr.wrapping_add(self.y);
-                    cycles -= 1;
+                    let addr = self.addr_zero_page_y(&mut cycles, mem);
                     let v = self.read_byte_zp(&mut cycles, addr, mem);
                     self.ldx(v);
                 }
                 Ok(Instruction::LdxABS) => {
-                    let addr = self.fetch_word(&mut cycles, mem);
+                    let addr = self.addr_absolute(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.ldx(v);
                 }
                 Ok(Instruction::LdxABY) => {
-                    let mut addr = self.fetch_word(&mut cycles, mem);
-                    if Self::page_crossed(addr, self.y) {
-                        cycles -= 1;
-                    }
-                    addr = addr.wrapping_add(self.y as Word);
+                    let addr = self.addr_absolute_y(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.ldx(v);
                 }
@@ -352,28 +327,22 @@ impl CPU {
                     self.ldy(v);
                 }
                 Ok(Instruction::LdyZPG) => {
-                    let addr = self.fetch_byte(&mut cycles, mem);
+                    let addr = self.addr_zero_page(&mut cycles, mem);
                     let v = self.read_byte_zp(&mut cycles, addr, mem);
                     self.ldy(v);
                 }
                 Ok(Instruction::LdyZPX) => {
-                    let mut addr = self.fetch_byte(&mut cycles, mem);
-                    addr = addr.wrapping_add(self.x);
-                    cycles -= 1;
+                    let addr = self.addr_zero_page_x(&mut cycles, mem);
                     let v = self.read_byte_zp(&mut cycles, addr, mem);
                     self.ldy(v);
                 }
                 Ok(Instruction::LdyABS) => {
-                    let addr = self.fetch_word(&mut cycles, mem);
+                    let addr = self.addr_absolute(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.ldy(v);
                 }
                 Ok(Instruction::LdyABX) => {
-                    let mut addr = self.fetch_word(&mut cycles, mem);
-                    if Self::page_crossed(addr, self.x) {
-                        cycles -= 1;
-                    }
-                    addr = addr.wrapping_add(self.x as Word);
+                    let addr = self.addr_absolute_x(&mut cycles, mem);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.ldy(v);
                 }
@@ -384,7 +353,6 @@ impl CPU {
                     self.sp -= 2;
                     self.pc = addr;
                     cycles -= 1;
-                    dbg!(addr);
                 }
                 Err(e) => {
                     panic!("{e}")
@@ -484,6 +452,64 @@ impl CPU {
 
     fn page_crossed(base: Word, index: Byte) -> bool {
         (base & 0xFF) + index as Word >= 0x100
+    }
+
+    // * Addressing Modes
+    /// ### Addressing Modes - Zero page
+    fn addr_zero_page(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
+        self.fetch_byte(cycles, mem)
+    }
+    /// ### Addressing Modes - Zero page with X offset
+    fn addr_zero_page_x(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
+        let addr = self.fetch_byte(cycles, mem).wrapping_add(self.x);
+        *cycles -= 1;
+        addr
+    }
+    /// ### Addressing Modes - Zero page with Y offset
+    fn addr_zero_page_y(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
+        let addr = self.fetch_byte(cycles, mem).wrapping_add(self.y);
+        *cycles -= 1;
+        addr
+    }
+    /// ### Addressing Modes - Absolute
+    fn addr_absolute(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+        self.fetch_word(cycles, mem)
+    }
+    /// ### Addressing Modes - Absolute with X offset
+    fn addr_absolute_x(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+        let mut addr = self.fetch_word(cycles, mem);
+        if Self::page_crossed(addr, self.x) {
+            *cycles -= 1;
+        }
+        addr = addr.wrapping_add(self.x as Word);
+        addr
+    }
+    /// ### Addressing Modes - Absolute with Y offset
+    fn addr_absolute_y(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+        let mut addr = self.fetch_word(cycles, mem);
+        if Self::page_crossed(addr, self.y) {
+            *cycles -= 1;
+        }
+        addr = addr.wrapping_add(self.y as Word);
+        addr
+    }
+    /// ### Addressing Modes - Indexed Indirect (X)
+    fn addr_indirect_x(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+        let mut addr = self.fetch_byte(cycles, mem);
+        addr = addr.wrapping_add(self.x);
+        *cycles -= 1;
+        let addr = self.read_word_zp(cycles, addr, mem);
+        addr
+    }
+    /// ### Addressing Modes - Indirect Indexed (Y)
+    fn addr_indirect_y(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+        let addr = self.fetch_byte(cycles, mem);
+        let mut addr = self.read_word_zp(cycles, addr, mem);
+        if Self::page_crossed(addr, self.y) {
+            *cycles -= 1;
+        }
+        addr = addr.wrapping_add(self.y as Word);
+        addr
     }
 }
 
