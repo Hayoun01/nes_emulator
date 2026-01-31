@@ -254,7 +254,6 @@ impl CPU {
         let requested_cycles = cycles;
         while cycles > 0 {
             let ins = self.fetch_byte(&mut cycles, mem);
-            dbg!(ins);
             match ins.try_into() {
                 // * LDA Instructions
                 Ok(Instruction::LdaIMM) => {
@@ -404,26 +403,26 @@ impl CPU {
         self.ldy_set_status();
     }
 
-    fn fetch_byte(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
+    fn fetch_byte(&mut self, cycles: &mut u32, mem: &Mem) -> Byte {
         let data = mem[self.pc as usize];
         *cycles -= 1;
         self.pc = self.pc.wrapping_add(1);
         data
     }
 
-    fn read_byte(&mut self, cycles: &mut u32, addr: Word, mem: &mut Mem) -> Byte {
+    fn read_byte(&mut self, cycles: &mut u32, addr: Word, mem: &Mem) -> Byte {
         let data = mem[addr as usize];
         *cycles -= 1;
         data
     }
 
-    fn read_byte_zp(&mut self, cycles: &mut u32, addr: Byte, mem: &mut Mem) -> Byte {
+    fn read_byte_zp(&mut self, cycles: &mut u32, addr: Byte, mem: &Mem) -> Byte {
         let data = mem[addr as usize];
         *cycles -= 1;
         data
     }
 
-    fn fetch_word(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+    fn fetch_word(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
         let mut data = mem[self.pc as usize] as Word;
         self.pc = self.pc.wrapping_add(1);
         data |= (mem[self.pc as usize] as Word) << 8;
@@ -432,13 +431,13 @@ impl CPU {
         data
     }
 
-    fn _read_word(&mut self, cycles: &mut u32, addr: Word, mem: &mut Mem) -> Word {
+    fn _read_word(&mut self, cycles: &mut u32, addr: Word, mem: &Mem) -> Word {
         let lo = self.read_byte(cycles, addr, mem);
         let hi = self.read_byte(cycles, addr.wrapping_add(1), mem);
         lo as Word | (hi as Word) << 8
     }
 
-    fn read_word_zp(&mut self, cycles: &mut u32, addr: Byte, mem: &mut Mem) -> Word {
+    fn read_word_zp(&mut self, cycles: &mut u32, addr: Byte, mem: &Mem) -> Word {
         let lo = self.read_byte_zp(cycles, addr, mem);
         let hi = self.read_byte_zp(cycles, addr.wrapping_add(1), mem);
         lo as Word | (hi as Word) << 8
@@ -456,27 +455,27 @@ impl CPU {
 
     // * Addressing Modes
     /// ### Addressing Modes - Zero page
-    fn addr_zero_page(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
+    fn addr_zero_page(&mut self, cycles: &mut u32, mem: &Mem) -> Byte {
         self.fetch_byte(cycles, mem)
     }
     /// ### Addressing Modes - Zero page with X offset
-    fn addr_zero_page_x(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
+    fn addr_zero_page_x(&mut self, cycles: &mut u32, mem: &Mem) -> Byte {
         let addr = self.fetch_byte(cycles, mem).wrapping_add(self.x);
         *cycles -= 1;
         addr
     }
     /// ### Addressing Modes - Zero page with Y offset
-    fn addr_zero_page_y(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
+    fn addr_zero_page_y(&mut self, cycles: &mut u32, mem: &Mem) -> Byte {
         let addr = self.fetch_byte(cycles, mem).wrapping_add(self.y);
         *cycles -= 1;
         addr
     }
     /// ### Addressing Modes - Absolute
-    fn addr_absolute(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+    fn addr_absolute(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
         self.fetch_word(cycles, mem)
     }
     /// ### Addressing Modes - Absolute with X offset
-    fn addr_absolute_x(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+    fn addr_absolute_x(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
         let mut addr = self.fetch_word(cycles, mem);
         if Self::page_crossed(addr, self.x) {
             *cycles -= 1;
@@ -485,7 +484,7 @@ impl CPU {
         addr
     }
     /// ### Addressing Modes - Absolute with Y offset
-    fn addr_absolute_y(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+    fn addr_absolute_y(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
         let mut addr = self.fetch_word(cycles, mem);
         if Self::page_crossed(addr, self.y) {
             *cycles -= 1;
@@ -494,7 +493,7 @@ impl CPU {
         addr
     }
     /// ### Addressing Modes - Indexed Indirect (X)
-    fn addr_indirect_x(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+    fn addr_indirect_x(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
         let mut addr = self.fetch_byte(cycles, mem);
         addr = addr.wrapping_add(self.x);
         *cycles -= 1;
@@ -502,7 +501,7 @@ impl CPU {
         addr
     }
     /// ### Addressing Modes - Indirect Indexed (Y)
-    fn addr_indirect_y(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+    fn addr_indirect_y(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
         let addr = self.fetch_byte(cycles, mem);
         let mut addr = self.read_word_zp(cycles, addr, mem);
         if Self::page_crossed(addr, self.y) {
