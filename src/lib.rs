@@ -612,7 +612,7 @@ impl CPU {
         lo as Word | (hi as Word) << 8
     }
 
-    fn write_word(&self, cycles: &mut u32, addr: Word, word: Word, mem: &mut Mem) {
+    fn _write_word(&self, cycles: &mut u32, addr: Word, word: Word, mem: &mut Mem) {
         mem[addr as usize] = (word & 0xFF) as u8;
         mem[(addr + 1) as usize] = (word >> 8) as u8;
         *cycles -= 2;
