@@ -504,10 +504,9 @@ impl CPU {
                 // * JSR Instructions
                 Ok(Instruction::JsrABS) => {
                     let addr = self.fetch_word(&mut cycles, mem);
-                    self.write_word(&mut cycles, self.sp as Word, self.pc - 1, mem);
-                    self.sp -= 2;
-                    self.pc = addr;
+                    self.push_word(&mut cycles, self.pc - 1, mem);
                     cycles -= 1;
+                    self.pc = addr;
                 }
                 Err(e) => {
                     panic!("{e}")
@@ -1293,7 +1292,7 @@ pub mod test {
         mem[0xFFFC] = Instruction::JsrABS.into();
         mem[0xFFFD] = 0x80;
         mem[0xFFFE] = 0x80;
-        mem[0x8080] = 0xA9;
+        mem[0x8080] = Instruction::LdaIMM.into();
         mem[0x8081] = 0x2A;
         // 6 cycle to execute JSR instruction
         let cycle_used = cpu.execute(6, &mut mem);
