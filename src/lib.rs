@@ -658,7 +658,7 @@ impl CPU {
         let mut addr = self.fetch_byte(cycles, mem);
         addr = addr.wrapping_add(self.x);
         *cycles -= 1;
-        
+
         self.read_word_zp(cycles, addr, mem)
     }
     /// ### Addressing Modes - Indirect Indexed (Y)
@@ -883,24 +883,6 @@ pub mod test {
         cpu.y = 0xF0;
         let cycle_used = cpu.execute(6, &mut mem);
         assert_eq!(cycle_used, 6);
-        assert_eq!(cpu.a, 0x2A);
-        assert!(cpu.flag.is_empty());
-    }
-
-    #[test]
-    fn jsr_absolute_load_value_to_register_a() {
-        let (mut cpu, mut mem) = setup_cpu_mem();
-        mem[0xFFFC] = Instruction::JsrABS.into();
-        mem[0xFFFD] = 0x80;
-        mem[0xFFFE] = 0x80;
-        mem[0x8080] = 0xA9;
-        mem[0x8081] = 0x2A;
-        // 6 cycle to execute JSR instruction
-        let cycle_used = cpu.execute(6, &mut mem);
-        assert_eq!(cycle_used, 6);
-        // 2 cycle to execute LdaIMM instruction
-        let cycle_used = cpu.execute(2, &mut mem);
-        assert_eq!(cycle_used, 2);
         assert_eq!(cpu.a, 0x2A);
         assert!(cpu.flag.is_empty());
     }
@@ -1273,6 +1255,25 @@ pub mod test {
         let cycle_used = cpu.execute(4, &mut mem);
         assert_eq!(cycle_used, 4);
         assert_eq!(mem[0x3742], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    // * JSR TESTS
+    #[test]
+    fn jsr_absolute_load_value_to_register_a() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::JsrABS.into();
+        mem[0xFFFD] = 0x80;
+        mem[0xFFFE] = 0x80;
+        mem[0x8080] = 0xA9;
+        mem[0x8081] = 0x2A;
+        // 6 cycle to execute JSR instruction
+        let cycle_used = cpu.execute(6, &mut mem);
+        assert_eq!(cycle_used, 6);
+        // 2 cycle to execute LdaIMM instruction
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
+        assert_eq!(cpu.a, 0x2A);
         assert!(cpu.flag.is_empty());
     }
 }
