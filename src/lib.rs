@@ -1304,4 +1304,66 @@ pub mod test {
         assert_eq!(cpu.a, 0x2A);
         assert!(cpu.flag.is_empty());
     }
+
+    // * Stack Operations TESTS
+    #[test]
+    fn stack_can_push_and_pull_byte() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        let mut cycles = 2; // push and pull must cost 2 cycles
+        cpu.push_byte(&mut cycles, 0x2A, &mut mem);
+        assert_eq!(mem[0x01FD], 0x2A); // check the data if stored in the correct place
+        assert_eq!(cpu.sp, 0xFC); // check if the SP decremented by 1 after storing the data
+        let data = cpu.pull_byte(&mut cycles, &mut mem);
+        assert_eq!(data, 0x2A);
+        assert_eq!(cpu.sp, 0xFD); // the SP must return to its initial position
+    }
+
+    #[test]
+    fn stack_can_push_and_pull_array_of_bytes() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        let mut cycles = 20; // push and pull must cost 20 cycles
+        for i in 1..=10 {
+            cpu.push_byte(&mut cycles, i, &mut mem);
+            let addr = 0x0100 | (cpu.sp + 1) as usize;
+            assert_eq!(mem[addr], i); // check the data if stored in the correct place
+        }
+        assert_eq!(cpu.sp, 0xFD - 10); // check if the SP decremented by 10 after storing the data
+        for i in (1..=10).rev() {
+            let data = cpu.pull_byte(&mut cycles, &mut mem);
+            assert_eq!(data, i);
+        }
+        assert_eq!(cpu.sp, 0xFD); // the SP must return to its initial position
+    }
+
+    #[test]
+    fn stack_can_push_and_pull_word() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        let mut cycles = 4; // push and pull must cost 4 cycles
+        cpu.push_word(&mut cycles, 0x2A37, &mut mem);
+        assert_eq!(mem[0x01FD], 0x2A); // hi first
+        assert_eq!(mem[0x01FC], 0x37); // lo
+        assert_eq!(cpu.sp, 0xFB); // check if the SP decremented by 2 after storing the data
+        let data = cpu.pull_word(&mut cycles, &mut mem);
+        assert_eq!(data, 0x2A37);
+        assert_eq!(cpu.sp, 0xFD); // the SP must return to its initial position
+    }
+
+    #[test]
+    fn stack_can_push_and_pull_array_of_words() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        let mut cycles = 40; // push and pull must cost 40 cycles
+        for i in 0x2A2A..0x2A34 {
+            cpu.push_word(&mut cycles, i, &mut mem);
+            let mut addr = 0x0100 | (cpu.sp + 1) as usize;
+            assert_eq!(mem[addr], i as Byte); // check lo first
+            addr += 1;
+            assert_eq!(mem[addr], (i >> 8) as Byte); // check hi
+        }
+        assert_eq!(cpu.sp, 0xFD - 20); // check if the SP decremented by 20 after storing the data
+        for i in (0x2A2A..0x2A34).rev() {
+            let data = cpu.pull_word(&mut cycles, &mut mem);
+            assert_eq!(data, i);
+        }
+        assert_eq!(cpu.sp, 0xFD); // the SP must return to its initial position
+    }
 }
