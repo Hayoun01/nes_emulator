@@ -179,6 +179,12 @@ enum Instruction {
     /// |--------|-------|--------|
     /// | 0x20 | 3 | 6 |
     JsrABS = 0x20,
+    // * [RTS] Return from Subroutine
+    /// ### Return from Subroutine Implicit
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x60 | 1 | 6 |
+    RtsIMP = 0x60,
 }
 
 impl TryFrom<Byte> for Instruction {
@@ -225,6 +231,8 @@ impl TryFrom<Byte> for Instruction {
             x if x == Self::StyABS as Byte => Ok(Self::StyABS),
             // * [JSR]
             x if x == Self::JsrABS as Byte => Ok(Self::JsrABS),
+            // * [RTS]
+            x if x == Self::RtsIMP as Byte => Ok(Self::RtsIMP),
             _ => Err("unknown CPU instruction"),
         }
     }
@@ -507,6 +515,12 @@ impl CPU {
                     self.push_word(&mut cycles, self.pc - 1, mem);
                     cycles -= 1;
                     self.pc = addr;
+                }
+                // * RTS Instructions
+                Ok(Instruction::RtsIMP) => {
+                    let addr = self.pull_word(&mut cycles, mem);
+                    self.pc = addr.wrapping_add(1);
+                    cycles -= 3;
                 }
                 Err(e) => {
                     panic!("{e}")
@@ -1297,6 +1311,31 @@ pub mod test {
         // 6 cycle to execute JSR instruction
         let cycle_used = cpu.execute(6, &mut mem);
         assert_eq!(cycle_used, 6);
+        // 2 cycle to execute LdaIMM instruction
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
+        assert_eq!(cpu.a, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+    
+    // * RTS TESTS
+    #[test]
+    fn jsr_rts_load_value_to_register_a() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::JsrABS.into();
+        mem[0xFFFD] = 0x80;
+        mem[0xFFFE] = 0x80;
+        mem[0xFFFF] = Instruction::LdaIMM.into();
+        mem[0x0000] = 0x2A;
+        mem[0x8080] = Instruction::RtsIMP.into(); // return
+        // 6 cycle to execute JSR instruction
+        let cycle_used = cpu.execute(6, &mut mem);
+        assert_eq!(cycle_used, 6);
+        // another 6 cycle to execute RTS instruction
+        let cycle_used = cpu.execute(6, &mut mem);
+        assert_eq!(cycle_used, 6);
+        // check if the RTS returned successfully
+        assert_eq!(cpu.pc, 0xFFFF);
         // 2 cycle to execute LdaIMM instruction
         let cycle_used = cpu.execute(2, &mut mem);
         assert_eq!(cycle_used, 2);
