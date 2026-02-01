@@ -5,6 +5,11 @@ use bitflags::{Flags, bitflags};
 type Byte = u8;
 type Word = u16;
 
+enum Access {
+    Read,
+    Write,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Instruction {
     // * [LDA] Load Accumulator
@@ -100,6 +105,74 @@ enum Instruction {
     /// |--------|-------|--------|
     /// | 0xBC | 3 | 4 (+1 if page crossed) |
     LdyABX = 0xBC,
+    // * [STA] Store Accumulator
+    /// ### Store Accumulator Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x85 | 2 | 3 |
+    StaZPG = 0x85,
+    /// ### Store Accumulator Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x95 | 2 | 4 |
+    StaZPX = 0x95,
+    /// ### Store Accumulator Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x8D | 3 | 4 |
+    StaABS = 0x8D,
+    /// ### Store Accumulator Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x9D | 3 | 5 |
+    StaABX = 0x9D,
+    /// ### Store Accumulator Absolute Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x99 | 3 | 5 |
+    StaABY = 0x99,
+    /// ### Store Accumulator Indexed Indirect X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x81 | 2 | 6 |
+    StaIDX = 0x81,
+    /// ### Store Accumulator Indirect Indexed Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x91 | 2 | 6 |
+    StaIDY = 0x91,
+    // * [STX] Store X Register
+    /// ### Store X Register Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x86 | 2 | 3 |
+    StxZPG = 0x86,
+    /// ### Store X Register Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x96 | 2 | 4 |
+    StxZPY = 0x96,
+    /// ### Store X Register Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x8E | 3 | 4 |
+    StxABS = 0x8E,
+    // * [STY] Store Y Register
+    /// ### Store Y Register Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x84 | 2 | 3 |
+    StyZPG = 0x84,
+    /// ### Store Y Register Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x94 | 2 | 4 |
+    StyZPX = 0x94,
+    /// ### Store Y Register Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x8C | 3 | 4 |
+    StyABS = 0x8C,
     // * [JSR] Jump to Subroutine
     /// ### Jump to Subroutine Absolute
     /// | Opcode | Bytes | Cycles |
@@ -134,6 +207,22 @@ impl TryFrom<Byte> for Instruction {
             x if x == Self::LdyZPX as Byte => Ok(Self::LdyZPX),
             x if x == Self::LdyABS as Byte => Ok(Self::LdyABS),
             x if x == Self::LdyABX as Byte => Ok(Self::LdyABX),
+            // * [STA]
+            x if x == Self::StaZPG as Byte => Ok(Self::StaZPG),
+            x if x == Self::StaZPX as Byte => Ok(Self::StaZPX),
+            x if x == Self::StaABS as Byte => Ok(Self::StaABS),
+            x if x == Self::StaABX as Byte => Ok(Self::StaABX),
+            x if x == Self::StaABY as Byte => Ok(Self::StaABY),
+            x if x == Self::StaIDX as Byte => Ok(Self::StaIDX),
+            x if x == Self::StaIDY as Byte => Ok(Self::StaIDY),
+            // * [STX]
+            x if x == Self::StxZPG as Byte => Ok(Self::StxZPG),
+            x if x == Self::StxZPY as Byte => Ok(Self::StxZPY),
+            x if x == Self::StxABS as Byte => Ok(Self::StxABS),
+            // * [STY]
+            x if x == Self::StyZPG as Byte => Ok(Self::StyZPG),
+            x if x == Self::StyZPX as Byte => Ok(Self::StyZPX),
+            x if x == Self::StyABS as Byte => Ok(Self::StyABS),
             // * [JSR]
             x if x == Self::JsrABS as Byte => Ok(Self::JsrABS),
             _ => Err("unknown CPU instruction"),
@@ -276,12 +365,12 @@ impl CPU {
                     self.lda(v);
                 }
                 Ok(Instruction::LdaABX) => {
-                    let addr = self.addr_absolute_x(&mut cycles, mem);
+                    let addr = self.addr_absolute_x(&mut cycles, mem, Access::Read);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.lda(v);
                 }
                 Ok(Instruction::LdaABY) => {
-                    let addr = self.addr_absolute_y(&mut cycles, mem);
+                    let addr = self.addr_absolute_y(&mut cycles, mem, Access::Read);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.lda(v);
                 }
@@ -291,7 +380,7 @@ impl CPU {
                     self.lda(v);
                 }
                 Ok(Instruction::LdaIDY) => {
-                    let addr = self.addr_indirect_y(&mut cycles, mem);
+                    let addr = self.addr_indirect_y(&mut cycles, mem, Access::Read);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.lda(v);
                 }
@@ -316,7 +405,7 @@ impl CPU {
                     self.ldx(v);
                 }
                 Ok(Instruction::LdxABY) => {
-                    let addr = self.addr_absolute_y(&mut cycles, mem);
+                    let addr = self.addr_absolute_y(&mut cycles, mem, Access::Read);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.ldx(v);
                 }
@@ -341,9 +430,64 @@ impl CPU {
                     self.ldy(v);
                 }
                 Ok(Instruction::LdyABX) => {
-                    let addr = self.addr_absolute_x(&mut cycles, mem);
+                    let addr = self.addr_absolute_x(&mut cycles, mem, Access::Read);
                     let v = self.read_byte(&mut cycles, addr, mem);
                     self.ldy(v);
+                }
+                // * STA Instructions
+                Ok(Instruction::StaZPG) => {
+                    let addr = self.addr_zero_page(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr as Word, self.a, mem);
+                }
+                Ok(Instruction::StaZPX) => {
+                    let addr = self.addr_zero_page_x(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr as Word, self.a, mem);
+                }
+                Ok(Instruction::StaABS) => {
+                    let addr = self.addr_absolute(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr, self.a, mem);
+                }
+                Ok(Instruction::StaABX) => {
+                    let addr = self.addr_absolute_x(&mut cycles, mem, Access::Write);
+                    self.write_byte(&mut cycles, addr, self.a, mem);
+                }
+                Ok(Instruction::StaABY) => {
+                    let addr = self.addr_absolute_y(&mut cycles, mem, Access::Write);
+                    self.write_byte(&mut cycles, addr, self.a, mem);
+                }
+                Ok(Instruction::StaIDX) => {
+                    let addr = self.addr_indirect_x(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr, self.a, mem);
+                }
+                Ok(Instruction::StaIDY) => {
+                    let addr = self.addr_indirect_y(&mut cycles, mem, Access::Write);
+                    self.write_byte(&mut cycles, addr, self.a, mem);
+                }
+                // * STX Instructions
+                Ok(Instruction::StxZPG) => {
+                    let addr = self.addr_zero_page(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr as Word, self.x, mem);
+                }
+                Ok(Instruction::StxZPY) => {
+                    let addr = self.addr_zero_page_y(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr as Word, self.x, mem);
+                }
+                Ok(Instruction::StxABS) => {
+                    let addr = self.addr_absolute(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr, self.x, mem);
+                }
+                // * STY Instructions
+                Ok(Instruction::StyZPG) => {
+                    let addr = self.addr_zero_page(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr as Word, self.y, mem);
+                }
+                Ok(Instruction::StyZPX) => {
+                    let addr = self.addr_zero_page_x(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr as Word, self.y, mem);
+                }
+                Ok(Instruction::StyABS) => {
+                    let addr = self.addr_absolute(&mut cycles, mem);
+                    self.write_byte(&mut cycles, addr, self.y, mem);
                 }
                 // * JSR Instructions
                 Ok(Instruction::JsrABS) => {
@@ -449,6 +593,11 @@ impl CPU {
         *cycles -= 2;
     }
 
+    fn write_byte(&self, cycles: &mut u32, addr: Word, byte: Byte, mem: &mut Mem) {
+        mem[addr as usize] = byte;
+        *cycles -= 1;
+    }
+
     fn page_crossed(base: Word, index: Byte) -> bool {
         (base & 0xFF) + index as Word >= 0x100
     }
@@ -475,18 +624,18 @@ impl CPU {
         self.fetch_word(cycles, mem)
     }
     /// ### Addressing Modes - Absolute with X offset
-    fn addr_absolute_x(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
+    fn addr_absolute_x(&mut self, cycles: &mut u32, mem: &Mem, access: Access) -> Word {
         let mut addr = self.fetch_word(cycles, mem);
-        if Self::page_crossed(addr, self.x) {
+        if matches!(access, Access::Write) || Self::page_crossed(addr, self.x) {
             *cycles -= 1;
         }
         addr = addr.wrapping_add(self.x as Word);
         addr
     }
     /// ### Addressing Modes - Absolute with Y offset
-    fn addr_absolute_y(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
+    fn addr_absolute_y(&mut self, cycles: &mut u32, mem: &Mem, access: Access) -> Word {
         let mut addr = self.fetch_word(cycles, mem);
-        if Self::page_crossed(addr, self.y) {
+        if matches!(access, Access::Write) || Self::page_crossed(addr, self.y) {
             *cycles -= 1;
         }
         addr = addr.wrapping_add(self.y as Word);
@@ -501,10 +650,10 @@ impl CPU {
         addr
     }
     /// ### Addressing Modes - Indirect Indexed (Y)
-    fn addr_indirect_y(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
+    fn addr_indirect_y(&mut self, cycles: &mut u32, mem: &Mem, access: Access) -> Word {
         let addr = self.fetch_byte(cycles, mem);
         let mut addr = self.read_word_zp(cycles, addr, mem);
-        if Self::page_crossed(addr, self.y) {
+        if matches!(access, Access::Write) || Self::page_crossed(addr, self.y) {
             *cycles -= 1;
         }
         addr = addr.wrapping_add(self.y as Word);
@@ -939,6 +1088,179 @@ pub mod test {
         let cycle_used = cpu.execute(5, &mut mem);
         assert_eq!(cycle_used, 5);
         assert_eq!(cpu.y, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    // * STA TESTS
+    #[test]
+    fn sta_zero_page_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StaZPG.into();
+        mem[0x0FFFD] = 0x42;
+        cpu.a = 0x2A;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(mem[0x42], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn sta_zero_page_x_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StaZPX.into();
+        mem[0x0FFFD] = 0x40;
+        cpu.x = 0x02;
+        cpu.a = 0x2A;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(mem[0x42], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn sta_absolute_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StaABS.into();
+        mem[0x0FFFD] = 0x42;
+        mem[0x0FFFE] = 0x37; // 0x3742
+        cpu.a = 0x2A;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(mem[0x3742], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn sta_absolute_x_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StaABX.into();
+        mem[0x0FFFD] = 0x37;
+        mem[0x0FFFE] = 0x42; // 0x4237
+        cpu.x = 0xB;
+        cpu.a = 0x2A;
+        let cycle_used = cpu.execute(5, &mut mem);
+        assert_eq!(cycle_used, 5);
+        assert_eq!(mem[0x4242], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn sta_absolute_y_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StaABY.into();
+        mem[0x0FFFD] = 0x37;
+        mem[0x0FFFE] = 0x42; // 0x4237
+        cpu.y = 0xB;
+        cpu.a = 0x2A;
+        let cycle_used = cpu.execute(5, &mut mem);
+        assert_eq!(cycle_used, 5);
+        assert_eq!(mem[0x4242], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn sta_indexed_indirect_x_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StaIDX.into();
+        mem[0x0FFFD] = 0x37;
+        mem[0x0042] = 0x42;
+        mem[0x0043] = 0x42;
+        cpu.x = 0xB;
+        cpu.a = 0x2A;
+        let cycle_used = cpu.execute(6, &mut mem);
+        assert_eq!(cycle_used, 6);
+        assert_eq!(mem[0x4242], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn sta_indirect_indexed_y_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StaIDY.into();
+        mem[0x0FFFD] = 0x37;
+        mem[0x0037] = 0x37;
+        mem[0x0038] = 0x42;
+        cpu.y = 0xB;
+        cpu.a = 0x2A;
+        let cycle_used = cpu.execute(6, &mut mem);
+        assert_eq!(cycle_used, 6);
+        assert_eq!(mem[0x4242], 42);
+        assert!(cpu.flag.is_empty());
+    }
+    // * STX TESTS
+    #[test]
+    fn stx_zero_page_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StxZPG.into();
+        mem[0x0FFFD] = 0x42;
+        cpu.x = 0x2A;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(mem[0x42], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn stx_zero_page_y_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StxZPY.into();
+        mem[0x0FFFD] = 0x40;
+        cpu.y = 0x02;
+        cpu.x = 0x2A;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(mem[0x42], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn stx_absolute_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StxABS.into();
+        mem[0x0FFFD] = 0x42;
+        mem[0x0FFFE] = 0x37; // 0x3742
+        cpu.x = 0x2A;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(mem[0x3742], 42);
+        assert!(cpu.flag.is_empty());
+    }
+    // * STY TESTS
+    #[test]
+    fn sty_zero_page_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StyZPG.into();
+        mem[0x0FFFD] = 0x42;
+        cpu.y = 0x2A;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(mem[0x42], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn sty_zero_page_x_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StyZPX.into();
+        mem[0x0FFFD] = 0x40;
+        cpu.x = 0x02;
+        cpu.y = 0x2A;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(mem[0x42], 42);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn sty_absolute_can_store_the_a_register_into_memory() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0x0FFFC] = Instruction::StyABS.into();
+        mem[0x0FFFD] = 0x42;
+        mem[0x0FFFE] = 0x37; // 0x3742
+        cpu.y = 0x2A;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(mem[0x3742], 42);
         assert!(cpu.flag.is_empty());
     }
 }
