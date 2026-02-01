@@ -230,9 +230,9 @@ impl TryFrom<Byte> for Instruction {
     }
 }
 
-impl Into<Byte> for Instruction {
-    fn into(self) -> Byte {
-        self as Byte
+impl From<Instruction> for Byte {
+    fn from(val: Instruction) -> Self {
+        val as Byte
     }
 }
 
@@ -242,6 +242,12 @@ const MEMORY_SIZE: usize = 1024 * 64;
 
 pub struct Mem {
     data: [Byte; MEMORY_SIZE],
+}
+
+impl Default for Mem {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Mem {
@@ -314,6 +320,12 @@ pub struct CPU {
     flag: Flag,
 }
 
+impl Default for CPU {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CPU {
     pub fn new() -> Self {
         Self {
@@ -327,7 +339,7 @@ impl CPU {
     }
     pub fn reset(&mut self, mem: &mut Mem) {
         self.pc = 0xFFFC;
-        self.sp = 0xFF;
+        self.sp = 0xFD;
         self.flag.clear();
         self.a = 0;
         self.x = 0;
@@ -646,8 +658,8 @@ impl CPU {
         let mut addr = self.fetch_byte(cycles, mem);
         addr = addr.wrapping_add(self.x);
         *cycles -= 1;
-        let addr = self.read_word_zp(cycles, addr, mem);
-        addr
+        
+        self.read_word_zp(cycles, addr, mem)
     }
     /// ### Addressing Modes - Indirect Indexed (Y)
     fn addr_indirect_y(&mut self, cycles: &mut u32, mem: &Mem, access: Access) -> Word {
@@ -677,7 +689,7 @@ pub mod test {
     fn cpu_initialized_properly() {
         let (cpu, mem) = setup_cpu_mem();
         assert_eq!(cpu.pc, 0xFFFC);
-        assert_eq!(cpu.sp, 0xFF);
+        assert_eq!(cpu.sp, 0xFD);
         assert!(cpu.flag.is_empty());
         assert_eq!(mem.data, [0x0; MEMORY_SIZE]);
     }
