@@ -614,6 +614,34 @@ impl CPU {
         (base & 0xFF) + index as Word >= 0x100
     }
 
+    // * Stack Operations
+    fn stack_addr(&self) -> Word {
+        0x0100 | self.sp as Word
+    }
+
+    fn push_byte(&mut self, cycles: &mut u32, byte: Byte, mem: &mut Mem) {
+        mem[self.stack_addr() as usize] = byte;
+        self.sp = self.sp.wrapping_sub(1);
+        *cycles -= 1;
+    }
+    fn push_word(&mut self, cycles: &mut u32, word: Word, mem: &mut Mem) {
+        let hi = (word >> 8) as Byte;
+        self.push_byte(cycles, hi, mem);
+        let lo = word as Byte;
+        self.push_byte(cycles, lo, mem);
+    }
+
+    fn pull_byte(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
+        self.sp = self.sp.wrapping_add(1);
+        *cycles -= 1;
+        mem[self.stack_addr() as usize]
+    }
+    fn pull_word(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
+        let lo = self.pull_byte(cycles, mem) as Word;
+        let hi = self.pull_byte(cycles, mem) as Word;
+        (hi << 8) | lo
+    }
+
     // * Addressing Modes
     /// ### Addressing Modes - Zero page
     fn addr_zero_page(&mut self, cycles: &mut u32, mem: &Mem) -> Byte {
