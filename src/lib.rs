@@ -1453,7 +1453,8 @@ pub mod test {
         let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::TsxIMP.into();
         cpu.sp = 0x2A;
-        cpu.execute(2, &mut mem);
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
         assert_eq!(cpu.x, 0x2A);
         assert!(cpu.flag.is_empty());
     }
@@ -1463,7 +1464,8 @@ pub mod test {
         let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::TsxIMP.into();
         cpu.sp = 0x0;
-        cpu.execute(2, &mut mem);
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
         assert_eq!(cpu.x, 0x0);
         assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
     }
@@ -1473,7 +1475,8 @@ pub mod test {
         let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::TsxIMP.into();
         cpu.sp = 0b10000000;
-        cpu.execute(2, &mut mem);
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
         assert_eq!(cpu.x, 0b10000000);
         assert_eq!(cpu.flag.bits(), Flag::NEGATIVE.bits());
     }
@@ -1484,7 +1487,8 @@ pub mod test {
         let (mut cpu, mut mem) = setup_cpu_mem();
         mem[0xFFFC] = Instruction::TxsIMP.into();
         cpu.x = 0x2A;
-        cpu.execute(2, &mut mem);
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
         assert_eq!(cpu.sp, 0x2A);
         assert!(cpu.flag.is_empty());
     }
