@@ -185,6 +185,17 @@ enum Instruction {
     /// |--------|-------|--------|
     /// | 0x60 | 1 | 6 |
     RtsIMP = 0x60,
+    // * [JMP] Jump
+    /// ### Jump Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x4C | 3 | 3 |
+    JmpABS = 0x4C,
+    /// ### Jump indirect
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x6C | 3 | 5 |
+    JmpIND = 0x6C,
 }
 
 impl TryFrom<Byte> for Instruction {
@@ -233,6 +244,9 @@ impl TryFrom<Byte> for Instruction {
             x if x == Self::JsrABS as Byte => Ok(Self::JsrABS),
             // * [RTS]
             x if x == Self::RtsIMP as Byte => Ok(Self::RtsIMP),
+            // * [JMP]
+            x if x == Self::JmpABS as Byte => Ok(Self::JmpABS),
+            x if x == Self::JmpIND as Byte => Ok(Self::JmpIND),
             _ => Err("unknown CPU instruction"),
         }
     }
@@ -522,6 +536,15 @@ impl CPU {
                     self.pc = addr.wrapping_add(1);
                     cycles -= 3;
                 }
+                // * JMP Instructions
+                Ok(Instruction::JmpABS) => {
+                    let addr = self.addr_absolute(&mut cycles, mem);
+                    self.pc = addr;
+                }
+                Ok(Instruction::JmpIND) => {
+                    let addr = self.addr_indirect(&mut cycles, mem);
+                    self.pc = addr;
+                }
                 Err(e) => {
                     panic!("{e}")
                 }
@@ -600,7 +623,7 @@ impl CPU {
         data
     }
 
-    fn _read_word(&mut self, cycles: &mut u32, addr: Word, mem: &Mem) -> Word {
+    fn read_word(&mut self, cycles: &mut u32, addr: Word, mem: &Mem) -> Word {
         let lo = self.read_byte(cycles, addr, mem);
         let hi = self.read_byte(cycles, addr.wrapping_add(1), mem);
         lo as Word | (hi as Word) << 8
@@ -693,6 +716,12 @@ impl CPU {
         }
         addr = addr.wrapping_add(self.y as Word);
         addr
+    }
+    /// ### Addressing Modes - Indirect
+    /// only used with **JMP** instruction
+    fn addr_indirect(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
+        let addr = self.fetch_word(cycles, mem);
+        self.read_word(cycles, addr, mem)
     }
     /// ### Addressing Modes - Indexed Indirect (X)
     fn addr_indirect_x(&mut self, cycles: &mut u32, mem: &Mem) -> Word {
@@ -1317,7 +1346,7 @@ pub mod test {
         assert_eq!(cpu.a, 0x2A);
         assert!(cpu.flag.is_empty());
     }
-    
+
     // * RTS TESTS
     #[test]
     fn jsr_rts_load_value_to_register_a() {
@@ -1341,6 +1370,55 @@ pub mod test {
         assert_eq!(cycle_used, 2);
         assert_eq!(cpu.a, 0x2A);
         assert!(cpu.flag.is_empty());
+    }
+
+    // * JMP TESTS
+    #[test]
+    fn jmp_abs() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::JmpABS.into();
+        mem[0xFFFD] = 0x42;
+        mem[0xFFFE] = 0x42;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(cpu.pc, 0x4242);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn jmp_ind() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::JmpIND.into();
+        mem[0xFFFD] = 0x42;
+        mem[0xFFFE] = 0x42;
+        mem[0x4242] = 0x37;
+        mem[0x4243] = 0x2A;
+        let cycle_used = cpu.execute(5, &mut mem);
+        assert_eq!(cycle_used, 5);
+        assert_eq!(cpu.pc, 0x2A37);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn jmp_ind_to_lda() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::JmpIND.into();
+        mem[0xFFFD] = 0x42;
+        mem[0xFFFE] = 0x42;
+        mem[0x4242] = 0x37;
+        mem[0x4243] = 0x2A;
+        mem[0x2A37] = Instruction::LdaIMM.into();
+        mem[0x2A38] = 0x0;
+        // Jump to ins
+        let cycle_used = cpu.execute(5, &mut mem);
+        assert_eq!(cycle_used, 5);
+        assert_eq!(cpu.pc, 0x2A37);
+        assert!(cpu.flag.is_empty());
+        // Execute ins after jump
+        let cycle_used = cpu.execute(2, &mut mem);
+        assert_eq!(cycle_used, 2);
+        assert_eq!(cpu.a, 0x0);
+        assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
     }
 
     // * Stack Operations TESTS
