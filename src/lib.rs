@@ -196,6 +196,18 @@ enum Instruction {
     /// |--------|-------|--------|
     /// | 0x6C | 3 | 5 |
     JmpIND = 0x6C,
+    // * [TSX] Transfer Stack Pointer to X
+    /// ### Transfer Stack Pointer to X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xBA | 1 | 2 |
+    TsxIMP = 0xBA,
+    // * [TSX] Transfer X to Stack Pointer
+    /// ### Transfer X to Stack Pointer
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x9A | 1 | 2 |
+    TxsIMP = 0x9A,
 }
 
 impl TryFrom<Byte> for Instruction {
@@ -247,6 +259,10 @@ impl TryFrom<Byte> for Instruction {
             // * [JMP]
             x if x == Self::JmpABS as Byte => Ok(Self::JmpABS),
             x if x == Self::JmpIND as Byte => Ok(Self::JmpIND),
+            // * [TSX]
+            x if x == Self::TsxIMP as Byte => Ok(Self::TsxIMP),
+            // * [TSX]
+            x if x == Self::TxsIMP as Byte => Ok(Self::TxsIMP),
             _ => Err("unknown CPU instruction"),
         }
     }
@@ -544,6 +560,16 @@ impl CPU {
                 Ok(Instruction::JmpIND) => {
                     let addr = self.addr_indirect(&mut cycles, mem);
                     self.pc = addr;
+                }
+                // * TSX Instructions
+                Ok(Instruction::TsxIMP) => {
+                    self.ldx(self.sp);
+                    cycles -= 1;
+                }
+                // * TXS Instructions
+                Ok(Instruction::TxsIMP) => {
+                    self.sp = self.x;
+                    cycles -= 1;
                 }
                 Err(e) => {
                     panic!("{e}")
@@ -1419,6 +1445,48 @@ pub mod test {
         assert_eq!(cycle_used, 2);
         assert_eq!(cpu.a, 0x0);
         assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
+    }
+
+    // * TSX TESTS
+    #[test]
+    fn tsx_can_transfer_sp_to_x_register() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::TsxIMP.into();
+        cpu.sp = 0x2A;
+        cpu.execute(2, &mut mem);
+        assert_eq!(cpu.x, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+
+    #[test]
+    fn tsx_can_transfer_zero_sp_to_x_register() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::TsxIMP.into();
+        cpu.sp = 0x0;
+        cpu.execute(2, &mut mem);
+        assert_eq!(cpu.x, 0x0);
+        assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
+    }
+
+    #[test]
+    fn tsx_can_transfer_negative_sp_to_x_register() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::TsxIMP.into();
+        cpu.sp = 0b10000000;
+        cpu.execute(2, &mut mem);
+        assert_eq!(cpu.x, 0b10000000);
+        assert_eq!(cpu.flag.bits(), Flag::NEGATIVE.bits());
+    }
+
+    // * TXS TESTS
+    #[test]
+    fn txs_can_transfer_x_register_to_sp() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::TxsIMP.into();
+        cpu.x = 0x2A;
+        cpu.execute(2, &mut mem);
+        assert_eq!(cpu.sp, 0x2A);
+        assert!(cpu.flag.is_empty());
     }
 
     // * Stack Operations TESTS
