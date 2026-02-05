@@ -541,16 +541,16 @@ impl CPU {
                 }
                 // * JSR Instructions
                 Ok(Instruction::JsrABS) => {
+                    cycles += 1;
                     let addr = self.fetch_word(&mut cycles, mem);
                     self.push_word(&mut cycles, self.pc - 1, mem);
-                    cycles -= 1;
                     self.pc = addr;
                 }
                 // * RTS Instructions
                 Ok(Instruction::RtsIMP) => {
                     let addr = self.pull_word(&mut cycles, mem);
                     self.pc = addr.wrapping_add(1);
-                    cycles -= 3;
+                    cycles -= 1;
                 }
                 // * JMP Instructions
                 Ok(Instruction::JmpABS) => {
@@ -683,6 +683,7 @@ impl CPU {
 
     fn push_byte(&mut self, cycles: &mut u32, byte: Byte, mem: &mut Mem) {
         mem[self.stack_addr() as usize] = byte;
+        *cycles -= 1;
         self.sp = self.sp.wrapping_sub(1);
         *cycles -= 1;
     }
@@ -696,7 +697,9 @@ impl CPU {
     fn pull_byte(&mut self, cycles: &mut u32, mem: &mut Mem) -> Byte {
         self.sp = self.sp.wrapping_add(1);
         *cycles -= 1;
-        mem[self.stack_addr() as usize]
+        let data = mem[self.stack_addr() as usize];
+        *cycles -= 1;
+        data
     }
     fn pull_word(&mut self, cycles: &mut u32, mem: &mut Mem) -> Word {
         let lo = self.pull_byte(cycles, mem) as Word;
@@ -1497,7 +1500,7 @@ pub mod test {
     #[test]
     fn stack_can_push_and_pull_byte() {
         let (mut cpu, mut mem) = setup_cpu_mem();
-        let mut cycles = 2; // push and pull must cost 2 cycles
+        let mut cycles = 4; // push and pull must cost 4 cycles
         cpu.push_byte(&mut cycles, 0x2A, &mut mem);
         assert_eq!(mem[0x01FD], 0x2A); // check the data if stored in the correct place
         assert_eq!(cpu.sp, 0xFC); // check if the SP decremented by 1 after storing the data
@@ -1509,7 +1512,7 @@ pub mod test {
     #[test]
     fn stack_can_push_and_pull_array_of_bytes() {
         let (mut cpu, mut mem) = setup_cpu_mem();
-        let mut cycles = 20; // push and pull must cost 20 cycles
+        let mut cycles = 40; // push and pull must cost 40 cycles
         for i in 1..=10 {
             cpu.push_byte(&mut cycles, i, &mut mem);
             let addr = 0x0100 | (cpu.sp + 1) as usize;
@@ -1526,7 +1529,7 @@ pub mod test {
     #[test]
     fn stack_can_push_and_pull_word() {
         let (mut cpu, mut mem) = setup_cpu_mem();
-        let mut cycles = 4; // push and pull must cost 4 cycles
+        let mut cycles = 8; // push and pull must cost 8 cycles
         cpu.push_word(&mut cycles, 0x2A37, &mut mem);
         assert_eq!(mem[0x01FD], 0x2A); // hi first
         assert_eq!(mem[0x01FC], 0x37); // lo
@@ -1539,7 +1542,7 @@ pub mod test {
     #[test]
     fn stack_can_push_and_pull_array_of_words() {
         let (mut cpu, mut mem) = setup_cpu_mem();
-        let mut cycles = 40; // push and pull must cost 40 cycles
+        let mut cycles = 80; // push and pull must cost 80 cycles
         for i in 0x2A2A..0x2A34 {
             cpu.push_word(&mut cycles, i, &mut mem);
             let mut addr = 0x0100 | (cpu.sp + 1) as usize;
