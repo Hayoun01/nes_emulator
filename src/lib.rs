@@ -208,6 +208,38 @@ enum Instruction {
     /// |--------|-------|--------|
     /// | 0x9A | 1 | 2 |
     TxsIMP = 0x9A,
+    // * [PHA] Push Accumulator
+    /// ### Push Accumulator to the stack
+    /// Pushes a copy of the accumulator on to the stack.
+    ///
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x48 | 1 | 3 |
+    PhaIMP = 0x48,
+    // * [PHP] Push Processor Status
+    /// ### Push Processor Status
+    /// Pushes a copy of the status flags on to the stack.
+    ///
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x08 | 1 | 3 |
+    PhpIMP = 0x08,
+    // * [PLA] Pull Accumulator
+    /// ### Pull Accumulator
+    /// Pulls an 8 bit value from the stack and into the accumulator. The zero and negative flags are set as appropriate.
+    ///
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x68 | 1 | 4 |
+    PlaIMP = 0x68,
+    // * [PLP] Pull Processor Status
+    /// ### Pull Processor Status
+    /// Pulls an 8 bit value from the stack and into the processor flags. The flags will take on new states as determined by the value pulled.
+    ///
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x28 | 1 | 4 |
+    PlpIMP = 0x28,
 }
 
 impl TryFrom<Byte> for Instruction {
@@ -263,6 +295,14 @@ impl TryFrom<Byte> for Instruction {
             x if x == Self::TsxIMP as Byte => Ok(Self::TsxIMP),
             // * [TSX]
             x if x == Self::TxsIMP as Byte => Ok(Self::TxsIMP),
+            // * [PHA]
+            x if x == Self::PhaIMP as Byte => Ok(Self::PhaIMP),
+            // * [PHP]
+            x if x == Self::PhpIMP as Byte => Ok(Self::PhpIMP),
+            // * [PLA]
+            x if x == Self::PlaIMP as Byte => Ok(Self::PlaIMP),
+            // * [PLP]
+            x if x == Self::PlpIMP as Byte => Ok(Self::PlpIMP),
             _ => Err("unknown CPU instruction"),
         }
     }
@@ -569,6 +609,26 @@ impl CPU {
                 // * TXS Instructions
                 Ok(Instruction::TxsIMP) => {
                     self.sp = self.x;
+                    cycles -= 1;
+                }
+                // * PHA Instruction
+                Ok(Instruction::PhaIMP) => {
+                    self.push_byte(&mut cycles, self.a, mem);
+                }
+                // * PHP Instruction
+                Ok(Instruction::PhpIMP) => {
+                    self.push_byte(&mut cycles, self.flag.bits(), mem);
+                }
+                // * PLA Instruction
+                Ok(Instruction::PlaIMP) => {
+                    let v = self.pull_byte(&mut cycles, mem);
+                    self.lda(v);
+                    cycles -= 1;
+                }
+                // * PLP Instruction
+                Ok(Instruction::PlpIMP) => {
+                    let v = self.pull_byte(&mut cycles, mem);
+                    self.flag.insert(Flag::from_bits(v).unwrap());
                     cycles -= 1;
                 }
                 Err(e) => {
@@ -1494,6 +1554,106 @@ pub mod test {
         assert_eq!(cycle_used, 2);
         assert_eq!(cpu.sp, 0x2A);
         assert!(cpu.flag.is_empty());
+    }
+
+    // * PHA TESTS
+    #[test]
+    fn pha_can_push_a_register_to_the_stack() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::PhaIMP.into();
+        cpu.a = 0x2A;
+        assert_eq!(cpu.sp, 0xFD);
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(mem[(cpu.stack_addr() + 1) as usize], 0x2A);
+        assert_eq!(cpu.sp, 0xFC);
+        assert!(cpu.flag.is_empty());
+    }
+
+    // * PHP TESTS
+    #[test]
+    fn php_can_push_cpu_status_to_the_stack() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        let flags = Flag::CARRY | Flag::DECIMAL_MODE;
+        let flags_as_byte = flags.bits();
+        mem[0xFFFC] = Instruction::PhpIMP.into();
+        cpu.flag.insert(flags);
+        assert_eq!(cpu.sp, 0xFD);
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(mem[(cpu.stack_addr() + 1) as usize], flags_as_byte);
+        assert_eq!(cpu.sp, 0xFC);
+        assert_eq!(cpu.flag.bits(), flags_as_byte);
+    }
+
+    // * PLA TESTS
+    #[test]
+    fn pla_can_pull_value_from_stack_to_a_register() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::PhaIMP.into();
+        cpu.a = 0x2A;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        mem[0xFFFD] = Instruction::PlaIMP.into();
+        // reset a register
+        cpu.a = 0x0;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.a, 0x2A);
+        assert!(cpu.flag.is_empty());
+    }
+    
+    #[test]
+    fn pla_can_pull_zero_value_from_stack_to_a_register() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::PhaIMP.into();
+        cpu.a = 0x0;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        mem[0xFFFD] = Instruction::PlaIMP.into();
+        // change a register
+        cpu.a = 0xFF;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.a, 0x0);
+        assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
+    }
+    
+    #[test]
+    fn pla_can_pull_negative_value_from_stack_to_a_register() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        mem[0xFFFC] = Instruction::PhaIMP.into();
+        cpu.a = 0x80;
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        mem[0xFFFD] = Instruction::PlaIMP.into();
+        // reset a register
+        cpu.a = 0x0;
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.a, 0x80);
+        assert_eq!(cpu.flag.bits(), Flag::NEGATIVE.bits());
+    }
+
+    // * PLP TESTS
+    #[test]
+    fn plp_can_pull_cpu_status_from_the_stack() {
+        let (mut cpu, mut mem) = setup_cpu_mem();
+        let flags = Flag::CARRY | Flag::DECIMAL_MODE;
+        let flags_as_byte = flags.bits();
+        mem[0xFFFC] = Instruction::PhpIMP.into();
+        cpu.flag.insert(flags);
+        assert_eq!(cpu.sp, 0xFD);
+        let cycle_used = cpu.execute(3, &mut mem);
+        assert_eq!(cycle_used, 3);
+        assert_eq!(mem[(cpu.stack_addr() + 1) as usize], flags_as_byte);
+        assert_eq!(cpu.sp, 0xFC);
+        assert_eq!(cpu.flag.bits(), flags_as_byte);
+        cpu.flag.clear();
+        mem[0xFFFD] = Instruction::PlpIMP.into();
+        let cycle_used = cpu.execute(4, &mut mem);
+        assert_eq!(cycle_used, 4);
+        assert_eq!(cpu.flag.bits(), flags_as_byte);
     }
 
     // * Stack Operations TESTS
