@@ -230,6 +230,129 @@ pub enum Instruction {
     /// |--------|-------|--------|
     /// | 0x28 | 1 | 4 |
     PlpIMP = 0x28,
+    // * [AND] Logical AND
+    /// ### Logical AND Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x29 | 2 | 2 |
+    AndIMM = 0x29,
+    /// ### Logical AND Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x25 | 2 | 3 |
+    AndZPG = 0x25,
+    /// ### Logical AND Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x35 | 2 | 4 |
+    AndZPX = 0x35,
+    /// ### Logical AND Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x2D | 3 | 4 |
+    AndABS = 0x2D,
+    /// ### Logical AND Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x3D | 3 | 4 (+1 if page crossed) |
+    AndABX = 0x3D,
+    /// ### Logical AND Absolute Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x39 | 3 | 4 (+1 if page crossed) |
+    AndABY = 0x39,
+    /// ### Logical AND Indexed Indirect X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x21 | 2 | 6 |
+    AndIDX = 0x21,
+    /// ### Logical AND Indirect Indexed Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x31 | 2 | 5 (+1 if page crossed) |
+    AndIDY = 0x31,
+    // * [EOR] Exclusive OR
+    /// ### Exclusive OR Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x49 | 2 | 2 |
+    EorIMM = 0x49,
+    /// ### Exclusive OR Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x05 | 2 | 3 |
+    EorZPG = 0x05,
+    /// ### Exclusive OR Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x15 | 2 | 4 |
+    EorZPX = 0x15,
+    /// ### Exclusive OR Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x0D | 3 | 4 |
+    EorABS = 0x0D,
+    /// ### Exclusive OR Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x1D | 3 | 4 (+1 if page crossed) |
+    EorABX = 0x1D,
+    /// ### Exclusive OR Absolute Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x19 | 3 | 4 (+1 if page crossed) |
+    EorABY = 0x19,
+    /// ### Exclusive OR Indexed Indirect X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x01 | 2 | 6 |
+    EorIDX = 0x01,
+    /// ### Exclusive OR Indirect Indexed Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x11 | 2 | 5 (+1 if page crossed) |
+    EorIDY = 0x11,
+    // * [ORA] Logical Inclusive OR
+    /// ### Logical Inclusive OR Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x09 | 2 | 2 |
+    OraIMM = 0x09,
+    /// ### Logical Inclusive OR Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x45 | 2 | 3 |
+    OraZPG = 0x45,
+    /// ### Logical Inclusive OR Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x55 | 2 | 4 |
+    OraZPX = 0x55,
+    /// ### Logical Inclusive OR Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x4D | 3 | 4 |
+    OraABS = 0x4D,
+    /// ### Logical Inclusive OR Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x5D | 3 | 4 (+1 if page crossed) |
+    OraABX = 0x5D,
+    /// ### Logical Inclusive OR Absolute Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x59 | 3 | 4 (+1 if page crossed) |
+    OraABY = 0x59,
+    /// ### Logical Inclusive OR Indexed Indirect X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x41 | 2 | 6 |
+    OraIDX = 0x41,
+    /// ### Logical Inclusive OR Indirect Indexed Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x51 | 2 | 5 (+1 if page crossed) |
+    OraIDY = 0x51,
 }
 
 impl TryFrom<Byte> for Instruction {
@@ -293,6 +416,33 @@ impl TryFrom<Byte> for Instruction {
             x if x == Self::PlaIMP as Byte => Ok(Self::PlaIMP),
             // * [PLP]
             x if x == Self::PlpIMP as Byte => Ok(Self::PlpIMP),
+            // * [AND]
+            x if x == Self::AndIMM as Byte => Ok(Self::AndIMM),
+            x if x == Self::AndZPG as Byte => Ok(Self::AndZPG),
+            x if x == Self::AndZPX as Byte => Ok(Self::AndZPX),
+            x if x == Self::AndABS as Byte => Ok(Self::AndABS),
+            x if x == Self::AndABX as Byte => Ok(Self::AndABX),
+            x if x == Self::AndABY as Byte => Ok(Self::AndABY),
+            x if x == Self::AndIDX as Byte => Ok(Self::AndIDX),
+            x if x == Self::AndIDY as Byte => Ok(Self::AndIDY),
+            // * [EOR]
+            x if x == Self::EorIMM as Byte => Ok(Self::EorIMM),
+            x if x == Self::EorZPG as Byte => Ok(Self::EorZPG),
+            x if x == Self::EorZPX as Byte => Ok(Self::EorZPX),
+            x if x == Self::EorABS as Byte => Ok(Self::EorABS),
+            x if x == Self::EorABX as Byte => Ok(Self::EorABX),
+            x if x == Self::EorABY as Byte => Ok(Self::EorABY),
+            x if x == Self::EorIDX as Byte => Ok(Self::EorIDX),
+            x if x == Self::EorIDY as Byte => Ok(Self::EorIDY),
+            // * [Ora]
+            x if x == Self::OraIMM as Byte => Ok(Self::OraIMM),
+            x if x == Self::OraZPG as Byte => Ok(Self::OraZPG),
+            x if x == Self::OraZPX as Byte => Ok(Self::OraZPX),
+            x if x == Self::OraABS as Byte => Ok(Self::OraABS),
+            x if x == Self::OraABX as Byte => Ok(Self::OraABX),
+            x if x == Self::OraABY as Byte => Ok(Self::OraABY),
+            x if x == Self::OraIDX as Byte => Ok(Self::OraIDX),
+            x if x == Self::OraIDY as Byte => Ok(Self::OraIDY),
             _ => Err("unknown CPU instruction"),
         }
     }

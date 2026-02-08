@@ -288,6 +288,126 @@ impl CPU {
                     self.flag.insert(Flag::from_bits(v).unwrap());
                     cycles -= 1;
                 }
+                // * AND Instruction
+                Ok(Instruction::AndIMM) => {
+                    let byte = self.fetch_byte(&mut cycles, bus);
+                    self.lda(self.a & byte);
+                }
+                Ok(Instruction::AndZPG) => {
+                    let addr = self.addr_zero_page(&mut cycles, bus);
+                    let byte = self.read_byte_zp(&mut cycles, addr, bus);
+                    self.lda(byte & self.a);
+                }
+                Ok(Instruction::AndZPX) => {
+                    let addr = self.addr_zero_page_x(&mut cycles, bus);
+                    let byte = self.read_byte_zp(&mut cycles, addr, bus);
+                    self.lda(byte & self.a);
+                }
+                Ok(Instruction::AndABS) => {
+                    let addr = self.addr_absolute(&mut cycles, bus);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte & self.a);
+                }
+                Ok(Instruction::AndABX) => {
+                    let addr = self.addr_absolute_x(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte & self.a);
+                }
+                Ok(Instruction::AndABY) => {
+                    let addr = self.addr_absolute_y(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte & self.a);
+                }
+                Ok(Instruction::AndIDX) => {
+                    let addr = self.addr_indirect_x(&mut cycles, bus);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte & self.a);
+                }
+                Ok(Instruction::AndIDY) => {
+                    let addr = self.addr_indirect_y(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte & self.a);
+                }
+                // * EOR Instruction
+                Ok(Instruction::EorIMM) => {
+                    let byte = self.fetch_byte(&mut cycles, bus);
+                    self.lda(self.a ^ byte);
+                }
+                Ok(Instruction::EorZPG) => {
+                    let addr = self.addr_zero_page(&mut cycles, bus);
+                    let byte = self.read_byte_zp(&mut cycles, addr, bus);
+                    self.lda(byte ^ self.a);
+                }
+                Ok(Instruction::EorZPX) => {
+                    let addr = self.addr_zero_page_x(&mut cycles, bus);
+                    let byte = self.read_byte_zp(&mut cycles, addr, bus);
+                    self.lda(byte ^ self.a);
+                }
+                Ok(Instruction::EorABS) => {
+                    let addr = self.addr_absolute(&mut cycles, bus);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte ^ self.a);
+                }
+                Ok(Instruction::EorABX) => {
+                    let addr = self.addr_absolute_x(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte ^ self.a);
+                }
+                Ok(Instruction::EorABY) => {
+                    let addr = self.addr_absolute_y(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte ^ self.a);
+                }
+                Ok(Instruction::EorIDX) => {
+                    let addr = self.addr_indirect_x(&mut cycles, bus);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte ^ self.a);
+                }
+                Ok(Instruction::EorIDY) => {
+                    let addr = self.addr_indirect_y(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte ^ self.a);
+                }
+                // * ORA Instruction
+                Ok(Instruction::OraIMM) => {
+                    let byte = self.fetch_byte(&mut cycles, bus);
+                    self.lda(self.a | byte);
+                }
+                Ok(Instruction::OraZPG) => {
+                    let addr = self.addr_zero_page(&mut cycles, bus);
+                    let byte = self.read_byte_zp(&mut cycles, addr, bus);
+                    self.lda(byte | self.a);
+                }
+                Ok(Instruction::OraZPX) => {
+                    let addr = self.addr_zero_page_x(&mut cycles, bus);
+                    let byte = self.read_byte_zp(&mut cycles, addr, bus);
+                    self.lda(byte | self.a);
+                }
+                Ok(Instruction::OraABS) => {
+                    let addr = self.addr_absolute(&mut cycles, bus);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte | self.a);
+                }
+                Ok(Instruction::OraABX) => {
+                    let addr = self.addr_absolute_x(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte | self.a);
+                }
+                Ok(Instruction::OraABY) => {
+                    let addr = self.addr_absolute_y(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte | self.a);
+                }
+                Ok(Instruction::OraIDX) => {
+                    let addr = self.addr_indirect_x(&mut cycles, bus);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte | self.a);
+                }
+                Ok(Instruction::OraIDY) => {
+                    let addr = self.addr_indirect_y(&mut cycles, bus, Access::Read);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.lda(byte | self.a);
+                }
                 Err(e) => {
                     panic!("{e}")
                 }
