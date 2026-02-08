@@ -417,7 +417,7 @@ fn ldy_abx_cross_page_load_value_to_register_y() {
 
 // * STA TESTS
 #[test]
-fn sta_zero_page_can_store_the_a_register_into_busory() {
+fn sta_zero_page_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StaZPG.into();
     bus[0x0FFFD] = 0x42;
@@ -429,7 +429,7 @@ fn sta_zero_page_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn sta_zero_page_x_can_store_the_a_register_into_busory() {
+fn sta_zero_page_x_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StaZPX.into();
     bus[0x0FFFD] = 0x40;
@@ -442,7 +442,7 @@ fn sta_zero_page_x_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn sta_absolute_can_store_the_a_register_into_busory() {
+fn sta_absolute_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StaABS.into();
     bus[0x0FFFD] = 0x42;
@@ -455,7 +455,7 @@ fn sta_absolute_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn sta_absolute_x_can_store_the_a_register_into_busory() {
+fn sta_absolute_x_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StaABX.into();
     bus[0x0FFFD] = 0x37;
@@ -469,7 +469,7 @@ fn sta_absolute_x_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn sta_absolute_y_can_store_the_a_register_into_busory() {
+fn sta_absolute_y_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StaABY.into();
     bus[0x0FFFD] = 0x37;
@@ -483,7 +483,7 @@ fn sta_absolute_y_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn sta_indexed_indirect_x_can_store_the_a_register_into_busory() {
+fn sta_indexed_indirect_x_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StaIDX.into();
     bus[0x0FFFD] = 0x37;
@@ -498,7 +498,7 @@ fn sta_indexed_indirect_x_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn sta_indirect_indexed_y_can_store_the_a_register_into_busory() {
+fn sta_indirect_indexed_y_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StaIDY.into();
     bus[0x0FFFD] = 0x37;
@@ -513,7 +513,7 @@ fn sta_indirect_indexed_y_can_store_the_a_register_into_busory() {
 }
 // * STX TESTS
 #[test]
-fn stx_zero_page_can_store_the_a_register_into_busory() {
+fn stx_zero_page_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StxZPG.into();
     bus[0x0FFFD] = 0x42;
@@ -525,7 +525,7 @@ fn stx_zero_page_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn stx_zero_page_y_can_store_the_a_register_into_busory() {
+fn stx_zero_page_y_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StxZPY.into();
     bus[0x0FFFD] = 0x40;
@@ -538,7 +538,7 @@ fn stx_zero_page_y_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn stx_absolute_can_store_the_a_register_into_busory() {
+fn stx_absolute_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StxABS.into();
     bus[0x0FFFD] = 0x42;
@@ -551,7 +551,7 @@ fn stx_absolute_can_store_the_a_register_into_busory() {
 }
 // * STY TESTS
 #[test]
-fn sty_zero_page_can_store_the_a_register_into_busory() {
+fn sty_zero_page_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StyZPG.into();
     bus[0x0FFFD] = 0x42;
@@ -563,7 +563,7 @@ fn sty_zero_page_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn sty_zero_page_x_can_store_the_a_register_into_busory() {
+fn sty_zero_page_x_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StyZPX.into();
     bus[0x0FFFD] = 0x40;
@@ -576,7 +576,7 @@ fn sty_zero_page_x_can_store_the_a_register_into_busory() {
 }
 
 #[test]
-fn sty_absolute_can_store_the_a_register_into_busory() {
+fn sty_absolute_can_store_the_a_register_into_bus() {
     let (mut cpu, mut bus) = setup_cpu_bus();
     bus[0x0FFFC] = Instruction::StyABS.into();
     bus[0x0FFFD] = 0x42;
