@@ -353,6 +353,17 @@ pub enum Instruction {
     /// |--------|-------|--------|
     /// | 0x51 | 2 | 5 (+1 if page crossed) |
     OraIDY = 0x51,
+    // * [BIT] Bit Test
+    /// ### Bit Test Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x24 | 2 | 3 |
+    BitZPG = 0x24,
+    /// ### Bit Test Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x2C | 3 | 4 |
+    BitABS = 0x2C,
 }
 
 impl TryFrom<Byte> for Instruction {
@@ -443,6 +454,9 @@ impl TryFrom<Byte> for Instruction {
             x if x == Self::OraABY as Byte => Ok(Self::OraABY),
             x if x == Self::OraIDX as Byte => Ok(Self::OraIDX),
             x if x == Self::OraIDY as Byte => Ok(Self::OraIDY),
+            // * [BIT]
+            x if x == Self::BitZPG as Byte => Ok(Self::BitZPG),
+            x if x == Self::BitABS as Byte => Ok(Self::BitABS),
             _ => Err("unknown CPU instruction"),
         }
     }

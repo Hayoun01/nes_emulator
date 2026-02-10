@@ -408,6 +408,21 @@ impl CPU {
                     let byte = self.read_byte(&mut cycles, addr, bus);
                     self.lda(byte | self.a);
                 }
+                // * BIT Instruction
+                Ok(Instruction::BitZPG) => {
+                    let addr = self.addr_zero_page(&mut cycles, bus);
+                    let byte = self.read_byte_zp(&mut cycles, addr, bus);
+                    self.flag.set(Flag::ZERO, (self.a & byte) == 0);
+                    self.flag.set(Flag::OVERFLOW, (byte & 0x40) != 0);
+                    self.flag.set(Flag::NEGATIVE, (byte & 0x80) != 0);
+                }
+                Ok(Instruction::BitABS) => {
+                    let addr = self.addr_absolute(&mut cycles, bus);
+                    let byte = self.read_byte(&mut cycles, addr, bus);
+                    self.flag.set(Flag::ZERO, (self.a & byte) == 0);
+                    self.flag.set(Flag::OVERFLOW, (byte & 0x40) != 0);
+                    self.flag.set(Flag::NEGATIVE, (byte & 0x80) != 0);
+                }
                 Err(e) => {
                     panic!("{e}")
                 }

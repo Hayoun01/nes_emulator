@@ -1,4 +1,5 @@
 mod common;
+use bitflags::Flags;
 use common::setup_cpu_bus;
 use cpu_6502::{
     bus::Byte,
@@ -445,4 +446,118 @@ fn ora_idy_can_and_with_a_register() {
 #[test]
 fn ora_idy_page_crossed_can_and_with_a_register() {
     test_logical_op_on_a_register_indirect_indexed_y_page_crossed(LogicalOp::OR);
+}
+
+#[test]
+fn test_bit_zero_page() {
+    let (mut cpu, mut bus) = setup_cpu_bus();
+    bus[0xFFFC] = Instruction::BitZPG.into();
+    bus[0xFFFD] = 0x42;
+    bus[0x0042] = 0x2A;
+    cpu.a = 0x2A;
+    cpu.flag.insert(Flag::ZERO);
+    let cycle_used = cpu.execute(3, &mut bus);
+    assert_eq!(cycle_used, 3);
+    assert!(cpu.flag.is_empty());
+}
+
+#[test]
+fn test_bit_zero_page_value_zero() {
+    let (mut cpu, mut bus) = setup_cpu_bus();
+    bus[0xFFFC] = Instruction::BitZPG.into();
+    bus[0xFFFD] = 0x42;
+    bus[0x0042] = 0x0;
+    cpu.a = 0x2A;
+    cpu.flag.clear();
+    let cycle_used = cpu.execute(3, &mut bus);
+    assert_eq!(cycle_used, 3);
+    assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
+}
+
+#[test]
+fn test_bit_zero_page_value_with_6_and_7_zero() {
+    let (mut cpu, mut bus) = setup_cpu_bus();
+    bus[0xFFFC] = Instruction::BitZPG.into();
+    bus[0xFFFD] = 0x42;
+    bus[0x0042] = 0xCC;
+    cpu.a = 0x33;
+    cpu.flag.clear();
+    let cycle_used = cpu.execute(3, &mut bus);
+    assert_eq!(cycle_used, 3);
+    assert_eq!(
+        cpu.flag.bits(),
+        (Flag::OVERFLOW | Flag::NEGATIVE | Flag::ZERO).bits()
+    );
+}
+
+#[test]
+fn test_bit_zero_page_value_with_6_and_7_mixed() {
+    let (mut cpu, mut bus) = setup_cpu_bus();
+    bus[0xFFFC] = Instruction::BitZPG.into();
+    bus[0xFFFD] = 0x42;
+    bus[0x0042] = 0x40;
+    cpu.a = 0xCC;
+    cpu.flag.clear();
+    let cycle_used = cpu.execute(3, &mut bus);
+    assert_eq!(cycle_used, 3);
+    assert_eq!(cpu.flag.bits(), Flag::OVERFLOW.bits());
+}
+
+#[test]
+fn test_bit_absolute() {
+    let (mut cpu, mut bus) = setup_cpu_bus();
+    bus[0xFFFC] = Instruction::BitABS.into();
+    bus[0xFFFD] = 0x42;
+    bus[0xFFFE] = 0x37;
+    bus[0x3742] = 0x2A;
+    cpu.a = 0x2A;
+    cpu.flag.insert(Flag::ZERO);
+    let cycle_used = cpu.execute(4, &mut bus);
+    assert_eq!(cycle_used, 4);
+    assert!(cpu.flag.is_empty());
+}
+
+#[test]
+fn test_bit_absolute_value_zero() {
+    let (mut cpu, mut bus) = setup_cpu_bus();
+    bus[0xFFFC] = Instruction::BitABS.into();
+    bus[0xFFFD] = 0x42;
+    bus[0xFFFE] = 0x37;
+    bus[0x3742] = 0x0;
+    cpu.a = 0x2A;
+    cpu.flag.clear();
+    let cycle_used = cpu.execute(4, &mut bus);
+    assert_eq!(cycle_used, 4);
+    assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
+}
+
+#[test]
+fn test_bit_absolute_value_with_6_and_7_zero() {
+    let (mut cpu, mut bus) = setup_cpu_bus();
+    bus[0xFFFC] = Instruction::BitABS.into();
+    bus[0xFFFD] = 0x42;
+    bus[0xFFFE] = 0x37;
+    bus[0x3742] = 0xCC;
+    cpu.a = 0x33;
+    cpu.flag.clear();
+    let cycle_used = cpu.execute(4, &mut bus);
+    assert_eq!(cycle_used, 4);
+    assert_eq!(
+        cpu.flag.bits(),
+        (Flag::OVERFLOW | Flag::NEGATIVE | Flag::ZERO).bits()
+    );
+}
+
+#[test]
+fn test_bit_absolute_value_with_6_and_7_mixed() {
+    let (mut cpu, mut bus) = setup_cpu_bus();
+    bus[0xFFFC] = Instruction::BitABS.into();
+    bus[0xFFFD] = 0x42;
+    bus[0xFFFE] = 0x37;
+    bus[0x3742] = 0x40;
+    cpu.a = 0xCC;
+    cpu.flag.clear();
+    let cycle_used = cpu.execute(4, &mut bus);
+    assert_eq!(cycle_used, 4);
+    assert_eq!(cpu.flag.bits(), Flag::OVERFLOW.bits());
 }
