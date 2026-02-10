@@ -417,30 +417,18 @@ impl CPU {
     }
 
     fn lda_set_status(&mut self) {
-        if self.a == 0 {
-            self.flag.insert(Flag::ZERO);
-        }
-        if (self.a & 0b10000000) > 0 {
-            self.flag.insert(Flag::NEGATIVE);
-        }
+        self.flag.set(Flag::ZERO, self.a == 0);
+        self.flag.set(Flag::NEGATIVE, (self.a & 0x80) != 0);
     }
 
     fn ldx_set_status(&mut self) {
-        if self.x == 0 {
-            self.flag.insert(Flag::ZERO);
-        }
-        if (self.x & 0b10000000) > 0 {
-            self.flag.insert(Flag::NEGATIVE);
-        }
+        self.flag.set(Flag::ZERO, self.x == 0);
+        self.flag.set(Flag::NEGATIVE, (self.x & 0x80) != 0);
     }
 
     fn ldy_set_status(&mut self) {
-        if self.y == 0 {
-            self.flag.insert(Flag::ZERO);
-        }
-        if (self.y & 0b10000000) > 0 {
-            self.flag.insert(Flag::NEGATIVE);
-        }
+        self.flag.set(Flag::ZERO, self.y == 0);
+        self.flag.set(Flag::NEGATIVE, (self.y & 0x80) != 0);
     }
 
     fn lda(&mut self, v: u8) {
