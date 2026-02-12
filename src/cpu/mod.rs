@@ -431,6 +431,21 @@ impl CPU {
         requested_cycles - cycles
     }
 
+    pub fn load_program<B: Bus>(&mut self, program: &[Byte], bus: &mut B) {
+        let mut iter = program.iter();
+        if program.len() >= 2 {
+            let mut start_addr = {
+                let mut tmp = *iter.next().unwrap() as Word;
+                tmp |= (*iter.next().unwrap() as Word) << 8;
+                tmp
+            };
+            for &v in iter {
+                bus.write(start_addr, v);
+                start_addr += 1;
+            }
+        }
+    }
+
     fn lda_set_status(&mut self) {
         self.flag.set(Flag::ZERO, self.a == 0);
         self.flag.set(Flag::NEGATIVE, (self.a & 0x80) != 0);
