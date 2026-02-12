@@ -86,7 +86,7 @@ impl CPU {
         self.x = x
     }
 
-    pub fn execute<B: Bus>(&mut self, mut cycles: u32, bus: &mut B) -> u32 {
+    pub fn execute<B: Bus>(&mut self, mut cycles: i32, bus: &mut B) -> i32 {
         let requested_cycles = cycles;
         while cycles > 0 {
             let ins = self.fetch_byte(&mut cycles, bus);
@@ -461,26 +461,26 @@ impl CPU {
         self.ldy_set_status();
     }
 
-    fn fetch_byte<B: Bus>(&mut self, cycles: &mut u32, bus: &mut B) -> Byte {
+    fn fetch_byte<B: Bus>(&mut self, cycles: &mut i32, bus: &mut B) -> Byte {
         let data = bus.read(self.pc);
         *cycles -= 1;
         self.pc = self.pc.wrapping_add(1);
         data
     }
 
-    fn read_byte<B: Bus>(&mut self, cycles: &mut u32, addr: Word, bus: &mut B) -> Byte {
+    fn read_byte<B: Bus>(&mut self, cycles: &mut i32, addr: Word, bus: &mut B) -> Byte {
         let data = bus.read(addr);
         *cycles -= 1;
         data
     }
 
-    fn read_byte_zp<B: Bus>(&mut self, cycles: &mut u32, addr: Byte, bus: &mut B) -> Byte {
+    fn read_byte_zp<B: Bus>(&mut self, cycles: &mut i32, addr: Byte, bus: &mut B) -> Byte {
         let data = bus.read(addr as Word);
         *cycles -= 1;
         data
     }
 
-    fn fetch_word<B: Bus>(&mut self, cycles: &mut u32, bus: &mut B) -> Word {
+    fn fetch_word<B: Bus>(&mut self, cycles: &mut i32, bus: &mut B) -> Word {
         let mut data = bus.read(self.pc) as Word;
         self.pc = self.pc.wrapping_add(1);
         data |= (bus.read(self.pc) as Word) << 8;
@@ -489,25 +489,25 @@ impl CPU {
         data
     }
 
-    fn read_word<B: Bus>(&mut self, cycles: &mut u32, addr: Word, bus: &mut B) -> Word {
+    fn read_word<B: Bus>(&mut self, cycles: &mut i32, addr: Word, bus: &mut B) -> Word {
         let lo = self.read_byte(cycles, addr, bus);
         let hi = self.read_byte(cycles, addr.wrapping_add(1), bus);
         lo as Word | (hi as Word) << 8
     }
 
-    fn read_word_zp<B: Bus>(&mut self, cycles: &mut u32, addr: Byte, bus: &mut B) -> Word {
+    fn read_word_zp<B: Bus>(&mut self, cycles: &mut i32, addr: Byte, bus: &mut B) -> Word {
         let lo = self.read_byte_zp(cycles, addr, bus);
         let hi = self.read_byte_zp(cycles, addr.wrapping_add(1), bus);
         lo as Word | (hi as Word) << 8
     }
 
-    fn _write_word<B: Bus>(&self, cycles: &mut u32, addr: Word, word: Word, bus: &mut B) {
+    fn _write_word<B: Bus>(&self, cycles: &mut i32, addr: Word, word: Word, bus: &mut B) {
         bus.write(addr, (word & 0xFF) as u8);
         bus.write(addr + 1, (word >> 8) as u8);
         *cycles -= 2;
     }
 
-    fn write_byte<B: Bus>(&self, cycles: &mut u32, addr: Word, byte: Byte, bus: &mut B) {
+    fn write_byte<B: Bus>(&self, cycles: &mut i32, addr: Word, byte: Byte, bus: &mut B) {
         bus.write(addr, byte);
         *cycles -= 1;
     }
