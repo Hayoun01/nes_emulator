@@ -1,86 +1,96 @@
 use crate::{
-    bus::{Bus, Byte, Word},
-    cpu::{Access, CPU},
+    bus::{Byte, Word},
+    cpu::CPU,
 };
 
 // * Addressing Modes
 
 impl CPU {
-    /// ### Addressing Modes - Zero page
-    pub fn addr_zero_page<B: Bus>(&mut self, cycles: &mut i32, bus: &mut B) -> Byte {
-        self.fetch_byte(cycles, bus)
+    /// ### Addressing Modes - Implied
+    pub fn imp(&mut self) -> Byte {
+        self.fetched = self.a;
+        0
     }
+    /// ### Addressing Modes - Immediate
+    pub fn imm(&mut self) -> Byte {
+        self.addr_abs = self.pc;
+        self.pc = self.pc.wrapping_add(1);
+        0
+    }
+    /// ### Addressing Modes - Zero page
+    pub fn zpg(&mut self) -> Byte {
+        self.addr_abs = self.fetch_byte() as Word;
+        self.addr_abs &= 0x00FF;
+        0
+    }
+
     /// ### Addressing Modes - Zero page with X offset
-    pub fn addr_zero_page_x<B: Bus>(&mut self, cycles: &mut i32, bus: &mut B) -> Byte {
-        let addr = self.fetch_byte(cycles, bus).wrapping_add(self.x);
-        *cycles -= 1;
-        addr
+    pub fn zpx(&mut self) -> Byte {
+        let addr: Byte = self.fetch_byte().wrapping_add(self.x);
+        self.addr_abs = addr as Word;
+        self.addr_abs &= 0x00FF;
+        0
     }
     /// ### Addressing Modes - Zero page with Y offset
-    pub fn addr_zero_page_y<B: Bus>(&mut self, cycles: &mut i32, bus: &mut B) -> Byte {
-        let addr = self.fetch_byte(cycles, bus).wrapping_add(self.y);
-        *cycles -= 1;
-        addr
+    pub fn zpy(&mut self) -> Byte {
+        let addr: Byte = self.fetch_byte().wrapping_add(self.y);
+        self.addr_abs = addr as Word;
+        self.addr_abs &= 0x00FF;
+        0
     }
     /// ### Addressing Modes - Absolute
-    pub fn addr_absolute<B: Bus>(&mut self, cycles: &mut i32, bus: &mut B) -> Word {
-        self.fetch_word(cycles, bus)
+    pub fn abs(&mut self) -> Byte {
+        self.addr_abs = self.fetch_word();
+        0
     }
     /// ### Addressing Modes - Absolute with X offset
-    pub fn addr_absolute_x<B: Bus>(
-        &mut self,
-        cycles: &mut i32,
-        bus: &mut B,
-        access: Access,
-    ) -> Word {
-        let mut addr = self.fetch_word(cycles, bus);
-        if matches!(access, Access::Write) || Self::page_crossed(addr, self.x) {
-            *cycles -= 1;
-        }
-        addr = addr.wrapping_add(self.x as Word);
-        addr
+    pub fn abx(&mut self) -> Byte {
+        self.addr_abs = self.fetch_word();
+        let [_, hi] = self.addr_abs.to_le_bytes();
+        self.addr_abs = self.addr_abs.wrapping_add(self.x as Word);
+        return if Self::page_crossed(self.addr_abs, hi) {
+            1
+        } else {
+            0
+        };
     }
     /// ### Addressing Modes - Absolute with Y offset
-    pub fn addr_absolute_y<B: Bus>(
-        &mut self,
-        cycles: &mut i32,
-        bus: &mut B,
-        access: Access,
-    ) -> Word {
-        let mut addr = self.fetch_word(cycles, bus);
-        if matches!(access, Access::Write) || Self::page_crossed(addr, self.y) {
-            *cycles -= 1;
-        }
-        addr = addr.wrapping_add(self.y as Word);
-        addr
+    pub fn aby(&mut self) -> Byte {
+        self.addr_abs = self.fetch_word();
+        let [_, hi] = self.addr_abs.to_le_bytes();
+        self.addr_abs = self.addr_abs.wrapping_add(self.y as Word);
+        return if Self::page_crossed(self.addr_abs, hi) {
+            1
+        } else {
+            0
+        };
     }
-    /// ### Addressing Modes - Indirect
+    /// ### Addressing Modes - Indirect (aka Pointers)
     /// only used with **JMP** instruction
-    pub fn addr_indirect<B: Bus>(&mut self, cycles: &mut i32, bus: &mut B) -> Word {
-        let addr = self.fetch_word(cycles, bus);
-        self.read_word(cycles, addr, bus)
+    // ! This address mode has a bug that i have to simulate as well
+    pub fn ind(&mut self) -> Byte {
+        let addr = self.fetch_word();
+        self.addr_abs = self.read_word(addr);
+        0
     }
     /// ### Addressing Modes - Indexed Indirect (X)
-    pub fn addr_indirect_x<B: Bus>(&mut self, cycles: &mut i32, bus: &mut B) -> Word {
-        let mut addr = self.fetch_byte(cycles, bus);
+    pub fn idx(&mut self) -> Byte {
+        let mut addr = self.fetch_byte();
         addr = addr.wrapping_add(self.x);
-        *cycles -= 1;
-
-        self.read_word_zp(cycles, addr, bus)
+        self.addr_abs = self.read_word_zp(addr);
+        0
     }
+
     /// ### Addressing Modes - Indirect Indexed (Y)
-    pub fn addr_indirect_y<B: Bus>(
-        &mut self,
-        cycles: &mut i32,
-        bus: &mut B,
-        access: Access,
-    ) -> Word {
-        let addr = self.fetch_byte(cycles, bus);
-        let mut addr = self.read_word_zp(cycles, addr, bus);
-        if matches!(access, Access::Write) || Self::page_crossed(addr, self.y) {
-            *cycles -= 1;
-        }
-        addr = addr.wrapping_add(self.y as Word);
-        addr
+    pub fn idy(&mut self) -> Byte {
+        let zp_addr = self.fetch_byte();
+        let addr = self.read_word_zp(zp_addr);
+        let [_, hi] = addr.to_le_bytes();
+        self.addr_abs = addr.wrapping_add(self.y as Word);
+        return if Self::page_crossed(self.addr_abs, hi) {
+            1
+        } else {
+            0
+        };
     }
 }

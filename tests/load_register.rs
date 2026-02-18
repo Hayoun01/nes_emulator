@@ -1,15 +1,15 @@
 mod common;
 use common::setup_cpu_bus;
-use cpu_6502::cpu::{Flag, instructions::Instruction};
+use cpu_6502::cpu::{Flag, instructions::Opcode};
 
 // * LDA TESTS
 
 #[test]
 fn lda_immediate_load_zero_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaIMM.into();
-    bus[0xFFFD] = 0x0;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaIMM.into());
+    cpu.write(0xFFFD, 0);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.a, 0x0);
     assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
@@ -17,10 +17,10 @@ fn lda_immediate_load_zero_value_to_register_a() {
 
 #[test]
 fn lda_immediate_load_negative_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaIMM.into();
-    bus[0xFFFD] = 0x84;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaIMM.into());
+    cpu.write(0xFFFD, 0x84);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.a, 0x84);
     assert_eq!(cpu.flag.bits(), Flag::NEGATIVE.bits());
@@ -28,10 +28,10 @@ fn lda_immediate_load_negative_value_to_register_a() {
 
 #[test]
 fn lda_immediate_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaIMM.into();
-    bus[0xFFFD] = 0x2A;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaIMM.into());
+    cpu.write(0xFFFD, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -39,11 +39,11 @@ fn lda_immediate_load_value_to_register_a() {
 
 #[test]
 fn lda_zero_page_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaZPG.into();
-    bus[0xFFFD] = 0x42;
-    bus[0x0042] = 0x2A;
-    let cycle_used = cpu.execute(3, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaZPG.into());
+    cpu.write(0xFFFD, 0x42);
+    cpu.write(0x0042, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 3);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -51,12 +51,12 @@ fn lda_zero_page_load_value_to_register_a() {
 
 #[test]
 fn lda_zero_page_x_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaZPX.into();
-    bus[0xFFFD] = 0x40;
-    bus[0x0042] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaZPX.into());
+    cpu.write(0xFFFD, 0x40);
+    cpu.write(0x0042, 0x2A);
     cpu.x = 0x2;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -64,12 +64,12 @@ fn lda_zero_page_x_load_value_to_register_a() {
 
 #[test]
 fn lda_zero_page_x_must_wrap_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaZPX.into();
-    bus[0xFFFD] = 0x43;
-    bus[0x0042] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaZPX.into());
+    cpu.write(0xFFFD, 0x43);
+    cpu.write(0x0042, 0x2A);
     cpu.x = 0xFF;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -77,12 +77,12 @@ fn lda_zero_page_x_must_wrap_load_value_to_register_a() {
 
 #[test]
 fn lda_abs_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaABS.into();
-    bus[0xFFFD] = 0x42;
-    bus[0xFFFE] = 0x41; // Ox4142
-    bus[0x4142] = 0x2A;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaABS.into());
+    cpu.write(0xFFFD, 0x42);
+    cpu.write(0xFFFE, 0x41); // Ox4142
+    cpu.write(0x4142, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -90,13 +90,13 @@ fn lda_abs_load_value_to_register_a() {
 
 #[test]
 fn lda_abx_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaABX.into();
-    bus[0xFFFD] = 0x41;
-    bus[0xFFFE] = 0x42; // 0x4241
-    bus[0x4242] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaABX.into());
+    cpu.write(0xFFFD, 0x41);
+    cpu.write(0xFFFE, 0x42); // 0x4241
+    cpu.write(0x4242, 0x2A);
     cpu.x = 0x01;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -104,13 +104,13 @@ fn lda_abx_load_value_to_register_a() {
 
 #[test]
 fn lda_abx_cross_page_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaABX.into();
-    bus[0xFFFD] = 0xF0;
-    bus[0xFFFE] = 0x02; // 0x0300
-    bus[0x0300] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaABX.into());
+    cpu.write(0xFFFD, 0xF0);
+    cpu.write(0xFFFE, 0x02); // 0x0300
+    cpu.write(0x0300, 0x2A);
     cpu.x = 0x10;
-    let cycle_used = cpu.execute(5, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 5);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -118,13 +118,13 @@ fn lda_abx_cross_page_load_value_to_register_a() {
 
 #[test]
 fn lda_aby_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaABY.into();
-    bus[0xFFFD] = 0x41;
-    bus[0xFFFE] = 0x42; // 0x4241
-    bus[0x4242] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaABY.into());
+    cpu.write(0xFFFD, 0x41);
+    cpu.write(0xFFFE, 0x42); // 0x4241
+    cpu.write(0x4242, 0x2A);
     cpu.y = 0x01;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -132,13 +132,13 @@ fn lda_aby_load_value_to_register_a() {
 
 #[test]
 fn lda_aby_cross_page_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaABY.into();
-    bus[0xFFFD] = 0xF0;
-    bus[0xFFFE] = 0x02; // 0x0300
-    bus[0x0300] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaABY.into());
+    cpu.write(0xFFFD, 0xF0);
+    cpu.write(0xFFFE, 0x02); // 0x0300
+    cpu.write(0x0300, 0x2A);
     cpu.y = 0x10;
-    let cycle_used = cpu.execute(5, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 5);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -146,14 +146,14 @@ fn lda_aby_cross_page_load_value_to_register_a() {
 
 #[test]
 fn lda_idx_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaIDX.into();
-    bus[0xFFFD] = 0x20;
-    bus[0x0024] = 0x00;
-    bus[0x0025] = 0x80;
-    bus[0x8000] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaIDX.into());
+    cpu.write(0xFFFD, 0x20);
+    cpu.write(0x0024, 0x00);
+    cpu.write(0x0025, 0x80);
+    cpu.write(0x8000, 0x2A);
     cpu.x = 0x4;
-    let cycle_used = cpu.execute(6, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 6);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -161,14 +161,14 @@ fn lda_idx_load_value_to_register_a() {
 
 #[test]
 fn lda_idy_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaIDY.into();
-    bus[0xFFFD] = 0x20;
-    bus[0x0020] = 0x00;
-    bus[0x0021] = 0x80;
-    bus[0x8004] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaIDY.into());
+    cpu.write(0xFFFD, 0x20);
+    cpu.write(0x0020, 0x00);
+    cpu.write(0x0021, 0x80);
+    cpu.write(0x8004, 0x2A);
     cpu.y = 0x4;
-    let cycle_used = cpu.execute(5, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 5);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -176,14 +176,14 @@ fn lda_idy_load_value_to_register_a() {
 
 #[test]
 fn lda_idy_cross_page_load_value_to_register_a() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdaIDY.into();
-    bus[0xFFFD] = 0x20;
-    bus[0x0020] = 0x10;
-    bus[0x0021] = 0x80;
-    bus[0x8100] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdaIDY.into());
+    cpu.write(0xFFFD, 0x20);
+    cpu.write(0x0020, 0x10);
+    cpu.write(0x0021, 0x80);
+    cpu.write(0x8100, 0x2A);
     cpu.y = 0xF0;
-    let cycle_used = cpu.execute(6, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 6);
     assert_eq!(cpu.a, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -193,10 +193,10 @@ fn lda_idy_cross_page_load_value_to_register_a() {
 
 #[test]
 fn ldx_immediate_load_zero_value_to_register_x() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdxIMM.into();
-    bus[0xFFFD] = 0x0;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdxIMM.into());
+    cpu.write(0xFFFD, 0x0);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.x, 0x0);
     assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
@@ -204,10 +204,10 @@ fn ldx_immediate_load_zero_value_to_register_x() {
 
 #[test]
 fn ldx_immediate_load_negative_value_to_register_x() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdxIMM.into();
-    bus[0xFFFD] = 0x84;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdxIMM.into());
+    cpu.write(0xFFFD, 0x84);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.x, 0x84);
     assert_eq!(cpu.flag.bits(), Flag::NEGATIVE.bits());
@@ -215,10 +215,10 @@ fn ldx_immediate_load_negative_value_to_register_x() {
 
 #[test]
 fn ldx_immediate_load_value_to_register_x() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdxIMM.into();
-    bus[0xFFFD] = 0x2A;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdxIMM.into());
+    cpu.write(0xFFFD, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.x, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -226,11 +226,11 @@ fn ldx_immediate_load_value_to_register_x() {
 
 #[test]
 fn ldx_zero_page_load_value_to_register_x() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdxZPG.into();
-    bus[0xFFFD] = 0x42;
-    bus[0x0042] = 0x2A;
-    let cycle_used = cpu.execute(3, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdxZPG.into());
+    cpu.write(0xFFFD, 0x42);
+    cpu.write(0x0042, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 3);
     assert_eq!(cpu.x, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -238,12 +238,12 @@ fn ldx_zero_page_load_value_to_register_x() {
 
 #[test]
 fn ldx_zero_page_y_load_value_to_register_x() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdxZPY.into();
-    bus[0xFFFD] = 0x40;
-    bus[0x0042] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdxZPY.into());
+    cpu.write(0xFFFD, 0x40);
+    cpu.write(0x0042, 0x2A);
     cpu.y = 0x2;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.x, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -251,12 +251,12 @@ fn ldx_zero_page_y_load_value_to_register_x() {
 
 #[test]
 fn ldx_abs_load_value_to_register_x() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdxABS.into();
-    bus[0xFFFD] = 0x42; // lo
-    bus[0xFFFE] = 0x41; // Ox4142
-    bus[0x4142] = 0x2A;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdxABS.into());
+    cpu.write(0xFFFD, 0x42); // lo
+    cpu.write(0xFFFE, 0x41); // Ox4142
+    cpu.write(0x4142, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.x, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -264,13 +264,13 @@ fn ldx_abs_load_value_to_register_x() {
 
 #[test]
 fn ldx_aby_load_value_to_register_x() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdxABY.into();
-    bus[0xFFFD] = 0x41;
-    bus[0xFFFE] = 0x42; // 0x4241
-    bus[0x4242] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdxABY.into());
+    cpu.write(0xFFFD, 0x41);
+    cpu.write(0xFFFE, 0x42); // 0x4241
+    cpu.write(0x4242, 0x2A);
     cpu.y = 0x01;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.x, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -278,13 +278,13 @@ fn ldx_aby_load_value_to_register_x() {
 
 #[test]
 fn ldx_aby_cross_page_load_value_to_register_x() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdxABY.into();
-    bus[0xFFFD] = 0xF0;
-    bus[0xFFFE] = 0x02; // 0x0300
-    bus[0x0300] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdxABY.into());
+    cpu.write(0xFFFD, 0xF0);
+    cpu.write(0xFFFE, 0x02); // 0x0300
+    cpu.write(0x0300, 0x2A);
     cpu.y = 0x10;
-    let cycle_used = cpu.execute(5, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 5);
     assert_eq!(cpu.x, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -294,10 +294,10 @@ fn ldx_aby_cross_page_load_value_to_register_x() {
 
 #[test]
 fn ldy_immediate_load_zero_value_to_register_y() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdyIMM.into();
-    bus[0xFFFD] = 0x0;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdyIMM.into());
+    cpu.write(0xFFFD, 0x0);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.y, 0x0);
     assert_eq!(cpu.flag.bits(), Flag::ZERO.bits());
@@ -305,10 +305,10 @@ fn ldy_immediate_load_zero_value_to_register_y() {
 
 #[test]
 fn ldy_immediate_load_negative_value_to_register_y() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdyIMM.into();
-    bus[0xFFFD] = 0x84;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdyIMM.into());
+    cpu.write(0xFFFD, 0x84);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.y, 0x84);
     assert_eq!(cpu.flag.bits(), Flag::NEGATIVE.bits());
@@ -316,10 +316,10 @@ fn ldy_immediate_load_negative_value_to_register_y() {
 
 #[test]
 fn ldy_immediate_load_value_to_register_y() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdyIMM.into();
-    bus[0xFFFD] = 0x2A;
-    let cycle_used = cpu.execute(2, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdyIMM.into());
+    cpu.write(0xFFFD, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 2);
     assert_eq!(cpu.y, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -327,11 +327,11 @@ fn ldy_immediate_load_value_to_register_y() {
 
 #[test]
 fn ldy_zero_page_load_value_to_register_y() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdyZPG.into();
-    bus[0xFFFD] = 0x42;
-    bus[0x0042] = 0x2A;
-    let cycle_used = cpu.execute(3, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdyZPG.into());
+    cpu.write(0xFFFD, 0x42);
+    cpu.write(0x0042, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 3);
     assert_eq!(cpu.y, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -339,12 +339,12 @@ fn ldy_zero_page_load_value_to_register_y() {
 
 #[test]
 fn ldy_zero_page_x_load_value_to_register_y() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdyZPX.into();
-    bus[0xFFFD] = 0x40;
-    bus[0x0042] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdyZPX.into());
+    cpu.write(0xFFFD, 0x40);
+    cpu.write(0x0042, 0x2A);
     cpu.x = 0x2;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.y, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -352,12 +352,12 @@ fn ldy_zero_page_x_load_value_to_register_y() {
 
 #[test]
 fn ldy_abs_load_value_to_register_y() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdyABS.into();
-    bus[0xFFFD] = 0x42; // lo
-    bus[0xFFFE] = 0x41; // Ox4142
-    bus[0x4142] = 0x2A;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdyABS.into());
+    cpu.write(0xFFFD, 0x42); // lo
+    cpu.write(0xFFFE, 0x41); // Ox4142
+    cpu.write(0x4142, 0x2A);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.y, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -365,13 +365,13 @@ fn ldy_abs_load_value_to_register_y() {
 
 #[test]
 fn ldy_abx_load_value_to_register_y() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdyABX.into();
-    bus[0xFFFD] = 0x41;
-    bus[0xFFFE] = 0x42; // 0x4241
-    bus[0x4242] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdyABX.into());
+    cpu.write(0xFFFD, 0x41);
+    cpu.write(0xFFFE, 0x42); // 0x4241
+    cpu.write(0x4242, 0x2A);
     cpu.x = 0x01;
-    let cycle_used = cpu.execute(4, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 4);
     assert_eq!(cpu.y, 0x2A);
     assert!(cpu.flag.is_empty());
@@ -379,13 +379,13 @@ fn ldy_abx_load_value_to_register_y() {
 
 #[test]
 fn ldy_abx_cross_page_load_value_to_register_y() {
-    let (mut cpu, mut bus) = setup_cpu_bus();
-    bus[0xFFFC] = Instruction::LdyABX.into();
-    bus[0xFFFD] = 0xF0;
-    bus[0xFFFE] = 0xFF; // 0xFFF0
-    bus[0x0000] = 0x2A;
+    let mut cpu = setup_cpu_bus();
+    cpu.write(0xFFFC, Opcode::LdyABX.into());
+    cpu.write(0xFFFD, 0xF0);
+    cpu.write(0xFFFE, 0xFF); // 0xFFF0
+    cpu.write(0x0000, 0x2A);
     cpu.x = 0x10;
-    let cycle_used = cpu.execute(5, &mut bus);
+    let cycle_used = cpu.execute();
     assert_eq!(cycle_used, 5);
     assert_eq!(cpu.y, 0x2A);
     assert!(cpu.flag.is_empty());

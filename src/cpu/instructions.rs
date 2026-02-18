@@ -1,7 +1,10 @@
-use crate::bus::Byte;
+use crate::{
+    bus::Byte,
+    cpu::{CPU, Flag},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Instruction {
+pub enum Opcode {
     // * [LDA] Load Accumulator
     /// ### Load Accumulator Immediate
     /// | Opcode | Bytes | Cycles |
@@ -364,9 +367,33 @@ pub enum Instruction {
     /// |--------|-------|--------|
     /// | 0x2C | 3 | 4 |
     BitABS = 0x2C,
+    // * [TAX] Transfer Accumulator to X
+    /// ### Transfer Accumulator to X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xAA | 1 | 2 |
+    TaxIMP = 0xAA,
+    // * [TAY] Transfer Accumulator to Y
+    /// ### Transfer Accumulator to Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xA8 | 1 | 2 |
+    TayIMP = 0xA8,
+    // * [TXA] Transfer X to Accumulator
+    /// ### Transfer X to Accumulator
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x8A | 1 | 2 |
+    TxaIMP = 0x8A,
+    // * [TYA] Transfer Y to Accumulator
+    /// ### Transfer Y to Accumulator
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x98 | 1 | 2 |
+    TyaIMP = 0x98,
 }
 
-impl TryFrom<Byte> for Instruction {
+impl TryFrom<Byte> for Opcode {
     type Error = &'static str;
 
     fn try_from(v: Byte) -> Result<Self, Self::Error> {
@@ -457,13 +484,329 @@ impl TryFrom<Byte> for Instruction {
             // * [BIT]
             x if x == Self::BitZPG as Byte => Ok(Self::BitZPG),
             x if x == Self::BitABS as Byte => Ok(Self::BitABS),
+            // * [TAX]
+            x if x == Self::TaxIMP as Byte => Ok(Self::TaxIMP),
+            // * [TAY]
+            x if x == Self::TayIMP as Byte => Ok(Self::TayIMP),
+            // * [TXA]
+            x if x == Self::TxaIMP as Byte => Ok(Self::TxaIMP),
+            // * [TYA]
+            x if x == Self::TyaIMP as Byte => Ok(Self::TyaIMP),
             _ => Err("unknown CPU instruction"),
         }
     }
 }
 
-impl From<Instruction> for Byte {
-    fn from(val: Instruction) -> Self {
+impl From<Opcode> for Byte {
+    fn from(val: Opcode) -> Self {
         val as Byte
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum AddrMode {
+    IMP,
+    IMM,
+    ZPG,
+    ZPX,
+    ZPY,
+    ABS,
+    ABX,
+    ABY,
+    IND,
+    IDX,
+    IDY,
+    XXX,
+}
+
+type OperateFn = fn(&mut CPU) -> Byte;
+
+#[derive(Debug, Clone, Copy)]
+pub struct Instruction {
+    pub name: &'static str,
+    pub operate: OperateFn,
+    pub addr_mode: AddrMode,
+    pub cycles: Byte,
+}
+
+impl Instruction {
+    const fn new(
+        name: &'static str,
+        operate: OperateFn,
+        addr_mode: AddrMode,
+        cycles: Byte,
+    ) -> Self {
+        Self {
+            name,
+            operate,
+            addr_mode,
+            cycles,
+        }
+    }
+}
+
+impl CPU {
+    pub const INSTRUCTIONS: [Instruction; 256] = {
+        let mut t = [Instruction::new("???", Self::xxx, AddrMode::XXX, 0); 256];
+        // * LDA Instructions
+        t[Opcode::LdaIMM as usize] = Instruction::new("LDA", Self::lda, AddrMode::IMM, 2);
+        t[Opcode::LdaZPG as usize] = Instruction::new("LDA", Self::lda, AddrMode::ZPG, 3);
+        t[Opcode::LdaZPX as usize] = Instruction::new("LDA", Self::lda, AddrMode::ZPX, 4);
+        t[Opcode::LdaABS as usize] = Instruction::new("LDA", Self::lda, AddrMode::ABS, 4);
+        t[Opcode::LdaABX as usize] = Instruction::new("LDA", Self::lda, AddrMode::ABX, 4);
+        t[Opcode::LdaABY as usize] = Instruction::new("LDA", Self::lda, AddrMode::ABY, 4);
+        t[Opcode::LdaIDX as usize] = Instruction::new("LDA", Self::lda, AddrMode::IDX, 6);
+        t[Opcode::LdaIDY as usize] = Instruction::new("LDA", Self::lda, AddrMode::IDY, 5);
+        // * LDX Instructions
+        t[Opcode::LdxIMM as usize] = Instruction::new("LDX", Self::ldx, AddrMode::IMM, 2);
+        t[Opcode::LdxZPG as usize] = Instruction::new("LDX", Self::ldx, AddrMode::ZPG, 3);
+        t[Opcode::LdxZPY as usize] = Instruction::new("LDX", Self::ldx, AddrMode::ZPY, 4);
+        t[Opcode::LdxABS as usize] = Instruction::new("LDX", Self::ldx, AddrMode::ABS, 4);
+        t[Opcode::LdxABY as usize] = Instruction::new("LDX", Self::ldx, AddrMode::ABY, 4);
+        // * LDY Instructions
+        t[Opcode::LdyIMM as usize] = Instruction::new("LDY", Self::ldy, AddrMode::IMM, 2);
+        t[Opcode::LdyZPG as usize] = Instruction::new("LDY", Self::ldy, AddrMode::ZPG, 3);
+        t[Opcode::LdyZPX as usize] = Instruction::new("LDY", Self::ldy, AddrMode::ZPX, 4);
+        t[Opcode::LdyABS as usize] = Instruction::new("LDY", Self::ldy, AddrMode::ABS, 4);
+        t[Opcode::LdyABX as usize] = Instruction::new("LDY", Self::ldy, AddrMode::ABX, 4);
+        // * STA Instructions
+        t[Opcode::StaZPG as usize] = Instruction::new("STA", Self::sta, AddrMode::ZPG, 3);
+        t[Opcode::StaZPX as usize] = Instruction::new("STA", Self::sta, AddrMode::ZPX, 4);
+        t[Opcode::StaABS as usize] = Instruction::new("STA", Self::sta, AddrMode::ABS, 4);
+        t[Opcode::StaABX as usize] = Instruction::new("STA", Self::sta, AddrMode::ABX, 5);
+        t[Opcode::StaABY as usize] = Instruction::new("STA", Self::sta, AddrMode::ABY, 5);
+        t[Opcode::StaIDX as usize] = Instruction::new("STA", Self::sta, AddrMode::IDX, 6);
+        t[Opcode::StaIDY as usize] = Instruction::new("STA", Self::sta, AddrMode::IDY, 6);
+        // * STX Instructions
+        t[Opcode::StxZPG as usize] = Instruction::new("STX", Self::stx, AddrMode::ZPG, 3);
+        t[Opcode::StxZPY as usize] = Instruction::new("STX", Self::stx, AddrMode::ZPY, 4);
+        t[Opcode::StxABS as usize] = Instruction::new("STX", Self::stx, AddrMode::ABS, 4);
+        // * STY Instructions
+        t[Opcode::StyZPG as usize] = Instruction::new("STY", Self::sty, AddrMode::ZPG, 3);
+        t[Opcode::StyZPX as usize] = Instruction::new("STY", Self::sty, AddrMode::ZPX, 4);
+        t[Opcode::StyABS as usize] = Instruction::new("STY", Self::sty, AddrMode::ABS, 4);
+        // * JSR Instructions
+        t[Opcode::JsrABS as usize] = Instruction::new("JSR", Self::jsr, AddrMode::ABS, 6);
+        // * RTS Instructions
+        t[Opcode::RtsIMP as usize] = Instruction::new("RTS", Self::rts, AddrMode::IMP, 6);
+        // * JMP Instructions
+        t[Opcode::JmpABS as usize] = Instruction::new("JMP", Self::jmp, AddrMode::ABS, 3);
+        t[Opcode::JmpIND as usize] = Instruction::new("JMP", Self::jmp, AddrMode::IND, 5);
+        // * TSX Instructions
+        t[Opcode::TsxIMP as usize] = Instruction::new("TSX", Self::tsx, AddrMode::IMP, 2);
+        // * TXS Instructions
+        t[Opcode::TxsIMP as usize] = Instruction::new("TXS", Self::txs, AddrMode::IMP, 2);
+        // * PHA Instructions
+        t[Opcode::PhaIMP as usize] = Instruction::new("PHA", Self::pha, AddrMode::IMP, 3);
+        // * PHP Instructions
+        t[Opcode::PhpIMP as usize] = Instruction::new("PHP", Self::php, AddrMode::IMP, 3);
+        // * PLA Instructions
+        t[Opcode::PlaIMP as usize] = Instruction::new("PLA", Self::pla, AddrMode::IMP, 4);
+        // * PLP Instructions
+        t[Opcode::PlpIMP as usize] = Instruction::new("PLP", Self::plp, AddrMode::IMP, 4);
+        // * AND Instructions
+        t[Opcode::AndIMM as usize] = Instruction::new("AND", Self::and, AddrMode::IMM, 2);
+        t[Opcode::AndZPG as usize] = Instruction::new("AND", Self::and, AddrMode::ZPG, 3);
+        t[Opcode::AndZPX as usize] = Instruction::new("AND", Self::and, AddrMode::ZPX, 4);
+        t[Opcode::AndABS as usize] = Instruction::new("AND", Self::and, AddrMode::ABS, 4);
+        t[Opcode::AndABX as usize] = Instruction::new("AND", Self::and, AddrMode::ABX, 4);
+        t[Opcode::AndABY as usize] = Instruction::new("AND", Self::and, AddrMode::ABY, 4);
+        t[Opcode::AndIDX as usize] = Instruction::new("AND", Self::and, AddrMode::IDX, 6);
+        t[Opcode::AndIDY as usize] = Instruction::new("AND", Self::and, AddrMode::IDY, 5);
+        // * EOR Instructions
+        t[Opcode::EorIMM as usize] = Instruction::new("EOR", Self::eor, AddrMode::IMM, 2);
+        t[Opcode::EorZPG as usize] = Instruction::new("EOR", Self::eor, AddrMode::ZPG, 3);
+        t[Opcode::EorZPX as usize] = Instruction::new("EOR", Self::eor, AddrMode::ZPX, 4);
+        t[Opcode::EorABS as usize] = Instruction::new("EOR", Self::eor, AddrMode::ABS, 4);
+        t[Opcode::EorABX as usize] = Instruction::new("EOR", Self::eor, AddrMode::ABX, 4);
+        t[Opcode::EorABY as usize] = Instruction::new("EOR", Self::eor, AddrMode::ABY, 4);
+        t[Opcode::EorIDX as usize] = Instruction::new("EOR", Self::eor, AddrMode::IDX, 6);
+        t[Opcode::EorIDY as usize] = Instruction::new("EOR", Self::eor, AddrMode::IDY, 5);
+        // * ORA Instructions
+        t[Opcode::OraIMM as usize] = Instruction::new("ORA", Self::ora, AddrMode::IMM, 2);
+        t[Opcode::OraZPG as usize] = Instruction::new("ORA", Self::ora, AddrMode::ZPG, 3);
+        t[Opcode::OraZPX as usize] = Instruction::new("ORA", Self::ora, AddrMode::ZPX, 4);
+        t[Opcode::OraABS as usize] = Instruction::new("ORA", Self::ora, AddrMode::ABS, 4);
+        t[Opcode::OraABX as usize] = Instruction::new("ORA", Self::ora, AddrMode::ABX, 4);
+        t[Opcode::OraABY as usize] = Instruction::new("ORA", Self::ora, AddrMode::ABY, 4);
+        t[Opcode::OraIDX as usize] = Instruction::new("ORA", Self::ora, AddrMode::IDX, 6);
+        t[Opcode::OraIDY as usize] = Instruction::new("ORA", Self::ora, AddrMode::IDY, 5);
+        // * BIT Instructions
+        t[Opcode::BitZPG as usize] = Instruction::new("BIT", Self::bit, AddrMode::ZPG, 3);
+        t[Opcode::BitABS as usize] = Instruction::new("BIT", Self::bit, AddrMode::ABS, 4);
+
+        // * TAX Instructions
+        t[Opcode::TaxIMP as usize] = Instruction::new("TAX", Self::tax, AddrMode::IMP, 2);
+        // * TAY Instructions
+        t[Opcode::TayIMP as usize] = Instruction::new("TAY", Self::tay, AddrMode::IMP, 2);
+        // * TXA Instructions
+        t[Opcode::TxaIMP as usize] = Instruction::new("TXA", Self::txa, AddrMode::IMP, 2);
+        // * TYA Instructions
+        t[Opcode::TyaIMP as usize] = Instruction::new("TYA", Self::tya, AddrMode::IMP, 2);
+        t
+    };
+
+    fn xxx(&mut self) -> Byte {
+        panic!("Illegal instruction!")
+    }
+
+    fn fetch(&mut self) -> Byte {
+        if Self::INSTRUCTIONS[self.opcode as usize].addr_mode != AddrMode::IMP {
+            self.fetched = self.read_byte(self.addr_abs);
+        }
+        return self.fetched;
+    }
+
+    fn lda_set_status(&mut self) {
+        self.flag.set(Flag::ZERO, self.a == 0);
+        self.flag.set(Flag::NEGATIVE, (self.a & 0x80) != 0);
+    }
+
+    fn ldx_set_status(&mut self) {
+        self.flag.set(Flag::ZERO, self.x == 0);
+        self.flag.set(Flag::NEGATIVE, (self.x & 0x80) != 0);
+    }
+
+    fn ldy_set_status(&mut self) {
+        self.flag.set(Flag::ZERO, self.y == 0);
+        self.flag.set(Flag::NEGATIVE, (self.y & 0x80) != 0);
+    }
+
+    fn lda(&mut self) -> Byte {
+        self.fetch();
+        self.a = self.fetched;
+        self.lda_set_status();
+        1
+    }
+    fn ldx(&mut self) -> Byte {
+        self.fetch();
+        self.x = self.fetched;
+        self.ldx_set_status();
+        1
+    }
+    fn ldy(&mut self) -> Byte {
+        self.fetch();
+        self.y = self.fetched;
+        self.ldy_set_status();
+        1
+    }
+    fn sta(&mut self) -> Byte {
+        self.write(self.addr_abs, self.a);
+        0
+    }
+    fn stx(&mut self) -> Byte {
+        self.write(self.addr_abs, self.x);
+        0
+    }
+    fn sty(&mut self) -> Byte {
+        self.write(self.addr_abs, self.y);
+        0
+    }
+    fn jsr(&mut self) -> Byte {
+        self.pc -= 1;
+        self.push_word(self.pc);
+        self.pc = self.addr_abs;
+        0
+    }
+    fn rts(&mut self) -> Byte {
+        let addr = self.pull_word();
+        self.pc = addr + 1;
+        0
+    }
+    fn jmp(&mut self) -> Byte {
+        self.pc = self.addr_abs;
+        0
+    }
+    fn tsx(&mut self) -> Byte {
+        self.x = self.sp;
+        self.ldx_set_status();
+        0
+    }
+    fn txs(&mut self) -> Byte {
+        self.sp = self.x;
+        0
+    }
+    fn pha(&mut self) -> Byte {
+        self.push_byte(self.a);
+        0
+    }
+    fn php(&mut self) -> Byte {
+        self.push_byte(self.flag.bits());
+        0
+    }
+    fn pla(&mut self) -> Byte {
+        self.a = self.pull_byte();
+        self.lda_set_status();
+        0
+    }
+    fn plp(&mut self) -> Byte {
+        let bits = self.pull_byte();
+        self.flag = Flag::from_bits_truncate(bits);
+        0
+    }
+    fn and(&mut self) -> Byte {
+        self.fetch();
+        self.a = self.a & self.fetched;
+        self.lda_set_status();
+        1
+    }
+    fn eor(&mut self) -> Byte {
+        self.fetch();
+        self.a = self.a ^ self.fetched;
+        self.lda_set_status();
+        1
+    }
+    fn ora(&mut self) -> Byte {
+        self.fetch();
+        self.a = self.a | self.fetched;
+        self.lda_set_status();
+        1
+    }
+    fn bit(&mut self) -> Byte {
+        self.fetch();
+        self.flag.set(Flag::ZERO, (self.a & self.fetched) == 0);
+        self.flag.set(Flag::OVERFLOW, (self.fetched & 0x40) != 0);
+        self.flag.set(Flag::NEGATIVE, (self.fetched & 0x80) != 0);
+        0
+    }
+    fn tax(&mut self) -> Byte {
+        self.x = self.a;
+        self.ldx_set_status();
+        0
+    }
+    fn tay(&mut self) -> Byte {
+        self.y = self.a;
+        self.ldy_set_status();
+        0
+    }
+    fn txa(&mut self) -> Byte {
+        self.a = self.x;
+        self.lda_set_status();
+        0
+    }
+    fn tya(&mut self) -> Byte {
+        self.a = self.y;
+        self.lda_set_status();
+        0
+    }
+    fn _tmp(&mut self) -> Byte {
+        0
+    }
+
+    pub fn resolve_addr(&mut self, mode: AddrMode) -> Byte {
+        match mode {
+            AddrMode::IMP => self.imp(),
+            AddrMode::IMM => self.imm(),
+            AddrMode::ZPG => self.zpg(),
+            AddrMode::ZPX => self.zpx(),
+            AddrMode::ZPY => self.zpy(),
+            AddrMode::ABS => self.abs(),
+            AddrMode::ABX => self.abx(),
+            AddrMode::ABY => self.aby(),
+            AddrMode::IND => self.ind(),
+            AddrMode::IDX => self.idx(),
+            AddrMode::IDY => self.idy(),
+            AddrMode::XXX => self.xxx(),
+        }
     }
 }
