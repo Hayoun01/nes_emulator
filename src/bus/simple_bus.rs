@@ -4,6 +4,7 @@ use crate::bus::{Bus, Byte, Word};
 
 pub const MEMORY_SIZE: usize = 1024 * 64;
 
+#[derive(Clone, Copy)]
 pub struct SimpleBus {
     /// ### Fake ram
     pub ram: [Byte; MEMORY_SIZE],
@@ -38,7 +39,7 @@ impl IndexMut<Word> for SimpleBus {
 }
 
 impl Bus for SimpleBus {
-    fn read(&mut self, addr: Word) -> Byte {
+    fn read(&mut self, addr: Word, _: bool) -> Byte {
         self.ram[addr as usize]
     }
 
