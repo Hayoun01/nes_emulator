@@ -391,6 +391,72 @@ pub enum Opcode {
     /// |--------|-------|--------|
     /// | 0x98 | 1 | 2 |
     TyaIMP = 0x98,
+    // * [INC] Increment Memory
+    /// ### Increment Memory Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xE6 | 2 | 5 |
+    IncZPG = 0xE6,
+    /// ### Increment Memory Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xF6 | 2 | 6 |
+    IncZPX = 0xF6,
+    /// ### Increment Memory Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xEE | 3 | 6 |
+    IncABS = 0xEE,
+    /// ### Increment Memory Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xFE | 3 | 7 |
+    IncABX = 0xFE,
+    // * [INX] Increment X Register
+    /// ### Increment X Register
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xE8 | 1 | 2 |
+    InxIMP = 0xE8,
+    // * [INY] Increment Y Register
+    /// ### Increment Y Register
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xC8 | 1 | 2 |
+    InyIMP = 0xC8,
+    // * [DEC] Decrement Memory
+    /// ### Decrement Memory Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xC6 | 2 | 5 |
+    DecZPG = 0xC6,
+    /// ### Decrement Memory Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xD6 | 2 | 6 |
+    DecZPX = 0xD6,
+    /// ### Decrement Memory Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xCE | 3 | 6 |
+    DecABS = 0xCE,
+    /// ### Decrement Memory Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xDE | 3 | 7 |
+    DecABX = 0xDE,
+    // * [DEX] Decrement X Register
+    /// ### Decrement X Register
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xCA | 1 | 2 |
+    DexIMP = 0xCA,
+    // * [DEY] Decrement X Register
+    /// ### Decrement X Register
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x88 | 1 | 2 |
+    DeyIMP = 0x88,
 }
 
 impl TryFrom<Byte> for Opcode {
@@ -492,6 +558,24 @@ impl TryFrom<Byte> for Opcode {
             x if x == Self::TxaIMP as Byte => Ok(Self::TxaIMP),
             // * [TYA]
             x if x == Self::TyaIMP as Byte => Ok(Self::TyaIMP),
+            // * [INC]
+            x if x == Self::IncZPG as Byte => Ok(Self::IncZPG),
+            x if x == Self::IncZPX as Byte => Ok(Self::IncZPX),
+            x if x == Self::IncABS as Byte => Ok(Self::IncABS),
+            x if x == Self::IncABX as Byte => Ok(Self::IncABX),
+            // * [INX]
+            x if x == Self::InxIMP as Byte => Ok(Self::InxIMP),
+            // * [INY]
+            x if x == Self::InyIMP as Byte => Ok(Self::InyIMP),
+            // * [DEC]
+            x if x == Self::DecZPG as Byte => Ok(Self::DecZPG),
+            x if x == Self::DecZPX as Byte => Ok(Self::DecZPX),
+            x if x == Self::DecABS as Byte => Ok(Self::DecABS),
+            x if x == Self::DecABX as Byte => Ok(Self::DecABX),
+            // * [DEX]
+            x if x == Self::DexIMP as Byte => Ok(Self::DexIMP),
+            // * [DEY]
+            x if x == Self::DeyIMP as Byte => Ok(Self::DeyIMP),
             _ => Err("unknown CPU instruction"),
         }
     }
@@ -548,7 +632,7 @@ impl Instruction {
 impl CPU {
     pub const INSTRUCTIONS: [Instruction; 256] = {
         let mut t = [Instruction::new("???", Self::xxx, AddrMode::XXX, 0); 256];
-        // * LDA Instructions
+        // * LDA Instruction
         t[Opcode::LdaIMM as usize] = Instruction::new("LDA", Self::lda, AddrMode::IMM, 2);
         t[Opcode::LdaZPG as usize] = Instruction::new("LDA", Self::lda, AddrMode::ZPG, 3);
         t[Opcode::LdaZPX as usize] = Instruction::new("LDA", Self::lda, AddrMode::ZPX, 4);
@@ -557,19 +641,19 @@ impl CPU {
         t[Opcode::LdaABY as usize] = Instruction::new("LDA", Self::lda, AddrMode::ABY, 4);
         t[Opcode::LdaIDX as usize] = Instruction::new("LDA", Self::lda, AddrMode::IDX, 6);
         t[Opcode::LdaIDY as usize] = Instruction::new("LDA", Self::lda, AddrMode::IDY, 5);
-        // * LDX Instructions
+        // * LDX Instruction
         t[Opcode::LdxIMM as usize] = Instruction::new("LDX", Self::ldx, AddrMode::IMM, 2);
         t[Opcode::LdxZPG as usize] = Instruction::new("LDX", Self::ldx, AddrMode::ZPG, 3);
         t[Opcode::LdxZPY as usize] = Instruction::new("LDX", Self::ldx, AddrMode::ZPY, 4);
         t[Opcode::LdxABS as usize] = Instruction::new("LDX", Self::ldx, AddrMode::ABS, 4);
         t[Opcode::LdxABY as usize] = Instruction::new("LDX", Self::ldx, AddrMode::ABY, 4);
-        // * LDY Instructions
+        // * LDY Instruction
         t[Opcode::LdyIMM as usize] = Instruction::new("LDY", Self::ldy, AddrMode::IMM, 2);
         t[Opcode::LdyZPG as usize] = Instruction::new("LDY", Self::ldy, AddrMode::ZPG, 3);
         t[Opcode::LdyZPX as usize] = Instruction::new("LDY", Self::ldy, AddrMode::ZPX, 4);
         t[Opcode::LdyABS as usize] = Instruction::new("LDY", Self::ldy, AddrMode::ABS, 4);
         t[Opcode::LdyABX as usize] = Instruction::new("LDY", Self::ldy, AddrMode::ABX, 4);
-        // * STA Instructions
+        // * STA Instruction
         t[Opcode::StaZPG as usize] = Instruction::new("STA", Self::sta, AddrMode::ZPG, 3);
         t[Opcode::StaZPX as usize] = Instruction::new("STA", Self::sta, AddrMode::ZPX, 4);
         t[Opcode::StaABS as usize] = Instruction::new("STA", Self::sta, AddrMode::ABS, 4);
@@ -577,34 +661,34 @@ impl CPU {
         t[Opcode::StaABY as usize] = Instruction::new("STA", Self::sta, AddrMode::ABY, 5);
         t[Opcode::StaIDX as usize] = Instruction::new("STA", Self::sta, AddrMode::IDX, 6);
         t[Opcode::StaIDY as usize] = Instruction::new("STA", Self::sta, AddrMode::IDY, 6);
-        // * STX Instructions
+        // * STX Instruction
         t[Opcode::StxZPG as usize] = Instruction::new("STX", Self::stx, AddrMode::ZPG, 3);
         t[Opcode::StxZPY as usize] = Instruction::new("STX", Self::stx, AddrMode::ZPY, 4);
         t[Opcode::StxABS as usize] = Instruction::new("STX", Self::stx, AddrMode::ABS, 4);
-        // * STY Instructions
+        // * STY Instruction
         t[Opcode::StyZPG as usize] = Instruction::new("STY", Self::sty, AddrMode::ZPG, 3);
         t[Opcode::StyZPX as usize] = Instruction::new("STY", Self::sty, AddrMode::ZPX, 4);
         t[Opcode::StyABS as usize] = Instruction::new("STY", Self::sty, AddrMode::ABS, 4);
-        // * JSR Instructions
+        // * JSR Instruction
         t[Opcode::JsrABS as usize] = Instruction::new("JSR", Self::jsr, AddrMode::ABS, 6);
-        // * RTS Instructions
+        // * RTS Instruction
         t[Opcode::RtsIMP as usize] = Instruction::new("RTS", Self::rts, AddrMode::IMP, 6);
-        // * JMP Instructions
+        // * JMP Instruction
         t[Opcode::JmpABS as usize] = Instruction::new("JMP", Self::jmp, AddrMode::ABS, 3);
         t[Opcode::JmpIND as usize] = Instruction::new("JMP", Self::jmp, AddrMode::IND, 5);
-        // * TSX Instructions
+        // * TSX Instruction
         t[Opcode::TsxIMP as usize] = Instruction::new("TSX", Self::tsx, AddrMode::IMP, 2);
-        // * TXS Instructions
+        // * TXS Instruction
         t[Opcode::TxsIMP as usize] = Instruction::new("TXS", Self::txs, AddrMode::IMP, 2);
-        // * PHA Instructions
+        // * PHA Instruction
         t[Opcode::PhaIMP as usize] = Instruction::new("PHA", Self::pha, AddrMode::IMP, 3);
-        // * PHP Instructions
+        // * PHP Instruction
         t[Opcode::PhpIMP as usize] = Instruction::new("PHP", Self::php, AddrMode::IMP, 3);
-        // * PLA Instructions
+        // * PLA Instruction
         t[Opcode::PlaIMP as usize] = Instruction::new("PLA", Self::pla, AddrMode::IMP, 4);
-        // * PLP Instructions
+        // * PLP Instruction
         t[Opcode::PlpIMP as usize] = Instruction::new("PLP", Self::plp, AddrMode::IMP, 4);
-        // * AND Instructions
+        // * AND Instruction
         t[Opcode::AndIMM as usize] = Instruction::new("AND", Self::and, AddrMode::IMM, 2);
         t[Opcode::AndZPG as usize] = Instruction::new("AND", Self::and, AddrMode::ZPG, 3);
         t[Opcode::AndZPX as usize] = Instruction::new("AND", Self::and, AddrMode::ZPX, 4);
@@ -613,7 +697,7 @@ impl CPU {
         t[Opcode::AndABY as usize] = Instruction::new("AND", Self::and, AddrMode::ABY, 4);
         t[Opcode::AndIDX as usize] = Instruction::new("AND", Self::and, AddrMode::IDX, 6);
         t[Opcode::AndIDY as usize] = Instruction::new("AND", Self::and, AddrMode::IDY, 5);
-        // * EOR Instructions
+        // * EOR Instruction
         t[Opcode::EorIMM as usize] = Instruction::new("EOR", Self::eor, AddrMode::IMM, 2);
         t[Opcode::EorZPG as usize] = Instruction::new("EOR", Self::eor, AddrMode::ZPG, 3);
         t[Opcode::EorZPX as usize] = Instruction::new("EOR", Self::eor, AddrMode::ZPX, 4);
@@ -622,7 +706,7 @@ impl CPU {
         t[Opcode::EorABY as usize] = Instruction::new("EOR", Self::eor, AddrMode::ABY, 4);
         t[Opcode::EorIDX as usize] = Instruction::new("EOR", Self::eor, AddrMode::IDX, 6);
         t[Opcode::EorIDY as usize] = Instruction::new("EOR", Self::eor, AddrMode::IDY, 5);
-        // * ORA Instructions
+        // * ORA Instruction
         t[Opcode::OraIMM as usize] = Instruction::new("ORA", Self::ora, AddrMode::IMM, 2);
         t[Opcode::OraZPG as usize] = Instruction::new("ORA", Self::ora, AddrMode::ZPG, 3);
         t[Opcode::OraZPX as usize] = Instruction::new("ORA", Self::ora, AddrMode::ZPX, 4);
@@ -631,18 +715,37 @@ impl CPU {
         t[Opcode::OraABY as usize] = Instruction::new("ORA", Self::ora, AddrMode::ABY, 4);
         t[Opcode::OraIDX as usize] = Instruction::new("ORA", Self::ora, AddrMode::IDX, 6);
         t[Opcode::OraIDY as usize] = Instruction::new("ORA", Self::ora, AddrMode::IDY, 5);
-        // * BIT Instructions
+        // * BIT Instruction
         t[Opcode::BitZPG as usize] = Instruction::new("BIT", Self::bit, AddrMode::ZPG, 3);
         t[Opcode::BitABS as usize] = Instruction::new("BIT", Self::bit, AddrMode::ABS, 4);
 
-        // * TAX Instructions
+        // * TAX Instruction
         t[Opcode::TaxIMP as usize] = Instruction::new("TAX", Self::tax, AddrMode::IMP, 2);
-        // * TAY Instructions
+        // * TAY Instruction
         t[Opcode::TayIMP as usize] = Instruction::new("TAY", Self::tay, AddrMode::IMP, 2);
-        // * TXA Instructions
+        // * TXA Instruction
         t[Opcode::TxaIMP as usize] = Instruction::new("TXA", Self::txa, AddrMode::IMP, 2);
-        // * TYA Instructions
+        // * TYA Instruction
         t[Opcode::TyaIMP as usize] = Instruction::new("TYA", Self::tya, AddrMode::IMP, 2);
+        // * INC Instruction
+        t[Opcode::IncZPG as usize] = Instruction::new("INC", Self::inc, AddrMode::ZPG, 5);
+        t[Opcode::IncZPX as usize] = Instruction::new("INC", Self::inc, AddrMode::ZPX, 6);
+        t[Opcode::IncABS as usize] = Instruction::new("INC", Self::inc, AddrMode::ABS, 6);
+        t[Opcode::IncABX as usize] = Instruction::new("INC", Self::inc, AddrMode::ABX, 7);
+        // * INX Instruction
+        t[Opcode::InxIMP as usize] = Instruction::new("INX", Self::inx, AddrMode::IMP, 2);
+        // * INY Instruction
+        t[Opcode::InyIMP as usize] = Instruction::new("INY", Self::iny, AddrMode::IMP, 2);
+        
+        // * DEC Instruction
+        t[Opcode::DecZPG as usize] = Instruction::new("DEC", Self::dec, AddrMode::ZPG, 5);
+        t[Opcode::DecZPX as usize] = Instruction::new("DEC", Self::dec, AddrMode::ZPX, 6);
+        t[Opcode::DecABS as usize] = Instruction::new("DEC", Self::dec, AddrMode::ABS, 6);
+        t[Opcode::DecABX as usize] = Instruction::new("DEC", Self::dec, AddrMode::ABX, 7);
+        // * DEX Instruction
+        t[Opcode::DexIMP as usize] = Instruction::new("DEX", Self::dex, AddrMode::IMP, 2);
+        // * DEY Instruction
+        t[Opcode::DeyIMP as usize] = Instruction::new("DEY", Self::dey, AddrMode::IMP, 2);
         t
     };
 
@@ -787,6 +890,44 @@ impl CPU {
     fn tya(&mut self) -> Byte {
         self.a = self.y;
         self.lda_set_status();
+        0
+    }
+    fn inc(&mut self) -> Byte {
+        self.fetch();
+        let tmp = self.fetched.wrapping_add(1);
+        self.write(self.addr_abs, tmp);
+        self.flag = Flag::empty();
+        self.flag.set(Flag::ZERO, tmp == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        0
+    }
+    fn dec(&mut self) -> Byte {
+        self.fetch();
+        let tmp = self.fetched.wrapping_sub(1);
+        self.write(self.addr_abs, tmp);
+        self.flag = Flag::empty();
+        self.flag.set(Flag::ZERO, tmp == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        0
+    }
+    fn inx(&mut self) -> Byte {
+        self.x = self.x.wrapping_add(1);
+        self.ldx_set_status();
+        0
+    }
+    fn iny(&mut self) -> Byte {
+        self.y = self.y.wrapping_add(1);
+        self.ldy_set_status();
+        0
+    }
+    fn dex(&mut self) -> Byte {
+        self.x = self.x.wrapping_sub(1);
+        self.ldx_set_status();
+        0
+    }
+    fn dey(&mut self) -> Byte {
+        self.y = self.y.wrapping_sub(1);
+        self.ldy_set_status();
         0
     }
     fn _tmp(&mut self) -> Byte {

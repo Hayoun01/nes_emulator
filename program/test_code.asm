@@ -2,6 +2,8 @@
 
 
 start
+inc $2a
+dec $1337
 lda #$0
 php
 lda #$CC

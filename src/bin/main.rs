@@ -32,8 +32,8 @@ impl DemoCPU {
 
     fn init(&mut self) {
         let program: [Byte; _] = [
-            0x00, 0x10, 0xa9, 0x00, 0x08, 0xa9, 0xcc, 0x85, 0x42, 0xa9, 0x33, 0x24, 0x42, 0x28,
-            0x4c, 0x00, 0x10,
+            0x00, 0x10, 0xe6, 0x2a, 0xc6, 0x37, 0xa9, 0x00, 0x08, 0xa9, 0xcc, 0x85, 0x42,
+            0xa9, 0x33, 0x24, 0x42, 0x28, 0x4c, 0x00, 0x10,
         ];
         self.cpu.load_program(&program);
         self.cpu.pc = 0x1000 as Word;
@@ -218,6 +218,7 @@ fn main() {
     let (mut rl, thread) = raylib::init().size(WIDTH, HEIGHT).title("Emulator").build();
     let mut demo = DemoCPU::new();
     demo.init();
+    rl.set_target_fps(60);
     while !rl.window_should_close() {
         rl.set_window_title(&thread, &format!("Emulator FPS: {}", rl.get_fps()));
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE)
@@ -243,5 +244,6 @@ fn main() {
             },
         );
         demo.draw_cpu(&mut d, HEIGHT, 0);
+        d.draw_fps(0, 0);
     }
 }
