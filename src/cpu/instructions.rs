@@ -760,17 +760,17 @@ impl CPU {
         return self.fetched;
     }
 
-    fn lda_set_status(&mut self) {
+    fn set_a_flags(&mut self) {
         self.flag.set(Flag::ZERO, self.a == 0);
         self.flag.set(Flag::NEGATIVE, (self.a & 0x80) != 0);
     }
 
-    fn ldx_set_status(&mut self) {
+    fn set_x_flags(&mut self) {
         self.flag.set(Flag::ZERO, self.x == 0);
         self.flag.set(Flag::NEGATIVE, (self.x & 0x80) != 0);
     }
 
-    fn ldy_set_status(&mut self) {
+    fn set_y_flags(&mut self) {
         self.flag.set(Flag::ZERO, self.y == 0);
         self.flag.set(Flag::NEGATIVE, (self.y & 0x80) != 0);
     }
@@ -778,19 +778,19 @@ impl CPU {
     fn lda(&mut self) -> Byte {
         self.fetch();
         self.a = self.fetched;
-        self.lda_set_status();
+        self.set_a_flags();
         1
     }
     fn ldx(&mut self) -> Byte {
         self.fetch();
         self.x = self.fetched;
-        self.ldx_set_status();
+        self.set_x_flags();
         1
     }
     fn ldy(&mut self) -> Byte {
         self.fetch();
         self.y = self.fetched;
-        self.ldy_set_status();
+        self.set_y_flags();
         1
     }
     fn sta(&mut self) -> Byte {
@@ -822,7 +822,7 @@ impl CPU {
     }
     fn tsx(&mut self) -> Byte {
         self.x = self.sp;
-        self.ldx_set_status();
+        self.set_x_flags();
         0
     }
     fn txs(&mut self) -> Byte {
@@ -839,7 +839,7 @@ impl CPU {
     }
     fn pla(&mut self) -> Byte {
         self.a = self.pull_byte();
-        self.lda_set_status();
+        self.set_a_flags();
         0
     }
     fn plp(&mut self) -> Byte {
@@ -850,19 +850,19 @@ impl CPU {
     fn and(&mut self) -> Byte {
         self.fetch();
         self.a = self.a & self.fetched;
-        self.lda_set_status();
+        self.set_a_flags();
         1
     }
     fn eor(&mut self) -> Byte {
         self.fetch();
         self.a = self.a ^ self.fetched;
-        self.lda_set_status();
+        self.set_a_flags();
         1
     }
     fn ora(&mut self) -> Byte {
         self.fetch();
         self.a = self.a | self.fetched;
-        self.lda_set_status();
+        self.set_a_flags();
         1
     }
     fn bit(&mut self) -> Byte {
@@ -874,22 +874,22 @@ impl CPU {
     }
     fn tax(&mut self) -> Byte {
         self.x = self.a;
-        self.ldx_set_status();
+        self.set_x_flags();
         0
     }
     fn tay(&mut self) -> Byte {
         self.y = self.a;
-        self.ldy_set_status();
+        self.set_y_flags();
         0
     }
     fn txa(&mut self) -> Byte {
         self.a = self.x;
-        self.lda_set_status();
+        self.set_a_flags();
         0
     }
     fn tya(&mut self) -> Byte {
         self.a = self.y;
-        self.lda_set_status();
+        self.set_a_flags();
         0
     }
     fn inc(&mut self) -> Byte {
@@ -912,22 +912,22 @@ impl CPU {
     }
     fn inx(&mut self) -> Byte {
         self.x = self.x.wrapping_add(1);
-        self.ldx_set_status();
+        self.set_x_flags();
         0
     }
     fn iny(&mut self) -> Byte {
         self.y = self.y.wrapping_add(1);
-        self.ldy_set_status();
+        self.set_y_flags();
         0
     }
     fn dex(&mut self) -> Byte {
         self.x = self.x.wrapping_sub(1);
-        self.ldx_set_status();
+        self.set_x_flags();
         0
     }
     fn dey(&mut self) -> Byte {
         self.y = self.y.wrapping_sub(1);
-        self.ldy_set_status();
+        self.set_y_flags();
         0
     }
     fn _tmp(&mut self) -> Byte {
