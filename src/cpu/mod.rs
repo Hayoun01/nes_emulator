@@ -64,6 +64,7 @@ pub struct CPU {
     pub opcode: Byte,
     pub bus: Option<Box<dyn Bus>>,
     pub general_cycles: u64,
+    pub cycles: Byte,
 }
 
 impl Default for CPU {
@@ -86,6 +87,7 @@ impl CPU {
             opcode: 0,
             bus: None,
             general_cycles: 0,
+            cycles: 0,
         }
     }
     pub fn reset(&mut self) {
@@ -136,6 +138,20 @@ impl CPU {
         cycles += (additional_1 & additional_2) as i32;
         self.general_cycles += cycles as u64;
         cycles
+    }
+
+    /// Advances the CPU by a single clock cycle.
+    pub fn clock(&mut self) {
+        if self.cycles == 0 {
+            self.opcode = self.fetch_byte();
+            let ins = &Self::INSTRUCTIONS[self.opcode as usize];
+            let additional_1 = self.resolve_addr(ins.addr_mode);
+            let additional_2 = (ins.operate)(self);
+            self.cycles += ins.cycles;
+            self.cycles += additional_1 & additional_2;
+        }
+        self.cycles -= 1;
+        self.general_cycles += 1;
     }
 
     pub fn load_program(&mut self, program: &[Byte]) {
