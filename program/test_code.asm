@@ -2,9 +2,11 @@
 
 
 start
+lda #$1
 inc $2a
-dec $1337
-lda #$0
+eor $2a
+beq start
+dec $37
 php
 lda #$CC
 sta $42

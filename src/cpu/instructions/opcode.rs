@@ -454,6 +454,62 @@ pub enum Opcode {
     /// |--------|-------|--------|
     /// | 0x88 | 1 | 2 |
     DeyIMP = 0x88,
+    // * [BEQ] Branch if Equal
+    /// ### Branch if Equal
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xF0 | 2 | 2 (+1 if branch succeeds) |
+    /// | | | (+2 if to a new page) |
+    BeqREL = 0xF0,
+    // * [BNE] Branch if Not Equal
+    /// ### Branch if Not Equal
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xD0 | 2 | 2 (+1 if branch succeeds) |
+    /// | | | (+2 if to a new page) |
+    BneREL = 0xD0,
+    // * [BCC] Branch if Carry Clear
+    /// ### Branch if Carry Clear
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x90 | 2 | 2 (+1 if branch succeeds) |
+    /// | | | (+2 if to a new page) |
+    BccREL = 0x90,
+    // * [BCS] Branch if Carry Set
+    /// ### Branch if Carry Set
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xB0 | 2 | 2 (+1 if branch succeeds) |
+    /// | | | (+2 if to a new page) |
+    BcsREL = 0xB0,
+    // * [BMI] Branch if Minus
+    /// ### Branch if Minus
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x30 | 2 | 2 (+1 if branch succeeds) |
+    /// | | | (+2 if to a new page) |
+    BmiREL = 0x30,
+    // * [BPL] Branch if Positive
+    /// ### Branch if Positive
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x10 | 2 | 2 (+1 if branch succeeds) |
+    /// | | | (+2 if to a new page) |
+    BplREL = 0x10,
+    // * [BVS] Branch if Overflow Set
+    /// ### Branch if Overflow Set
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x70 | 2 | 2 (+1 if branch succeeds) |
+    /// | | | (+2 if to a new page) |
+    BvsREL = 0x70,
+    // * [BVC] Branch if Overflow Clear
+    /// ### Branch if Overflow Clear
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x50 | 2 | 2 (+1 if branch succeeds) |
+    /// | | | (+2 if to a new page) |
+    BvcREL = 0x50,
 }
 
 impl TryFrom<Byte> for Opcode {
@@ -573,6 +629,22 @@ impl TryFrom<Byte> for Opcode {
             x if x == Self::DexIMP as Byte => Ok(Self::DexIMP),
             // * [DEY]
             x if x == Self::DeyIMP as Byte => Ok(Self::DeyIMP),
+            // * [BEQ]
+            x if x == Self::BeqREL as Byte => Ok(Self::BeqREL),
+            // * [BNE]
+            x if x == Self::BneREL as Byte => Ok(Self::BneREL),
+            // * [BCC]
+            x if x == Self::BccREL as Byte => Ok(Self::BccREL),
+            // * [BCS]
+            x if x == Self::BcsREL as Byte => Ok(Self::BcsREL),
+            // * [BMI]
+            x if x == Self::BmiREL as Byte => Ok(Self::BmiREL),
+            // * [BPL]
+            x if x == Self::BplREL as Byte => Ok(Self::BplREL),
+            // * [BVS]
+            x if x == Self::BvsREL as Byte => Ok(Self::BvsREL),
+            // * [BVC]
+            x if x == Self::BvcREL as Byte => Ok(Self::BvcREL),
             _ => Err("unknown CPU instruction"),
         }
     }

@@ -60,6 +60,7 @@ pub struct CPU {
     // * Internals
     pub fetched: Byte,
     pub addr_abs: Word,
+    pub addr_rel: Word,
     pub opcode: Byte,
     pub bus: Option<Box<dyn Bus>>,
     pub general_cycles: u64,
@@ -83,6 +84,7 @@ impl CPU {
             flag: Flag::empty(),
             fetched: 0,
             addr_abs: 0,
+            addr_rel: 0,
             opcode: 0,
             bus: None,
             general_cycles: 0,
@@ -133,9 +135,13 @@ impl CPU {
         let ins = &Self::INSTRUCTIONS[self.opcode as usize];
         let additional_1 = self.resolve_addr(ins.addr_mode);
         let additional_2 = (ins.operate)(self);
-        cycles += ins.cycles as i32;
-        cycles += (additional_1 & additional_2) as i32;
-        self.general_cycles += cycles as u64;
+        self.cycles += ins.cycles;
+        self.cycles += additional_1 & additional_2;
+        while self.cycles != 0 {
+            cycles += 1;
+            self.general_cycles += 1;
+            self.cycles -= 1;
+        }
         cycles
     }
 
@@ -273,7 +279,16 @@ impl CPU {
                     addr += 1;
                     ins += &format!("(${:04X}) {{IND}}", Word::from_le_bytes([lo, hi]));
                 }
-                _ => {}
+                AddrMode::REL => {
+                    let byte = self.read(addr as Word, true) as i8;
+                    addr += 1;
+                    ins += &format!(
+                        "${:02X} [${:04X}] {{REL}}",
+                        byte,
+                        addr.wrapping_add(byte as _)
+                    );
+                }
+                AddrMode::XXX => {}
             }
             lines.insert(line_addr as Word, ins);
         }

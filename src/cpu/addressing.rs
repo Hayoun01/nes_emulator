@@ -18,6 +18,7 @@ pub enum AddrMode {
     IND,
     IDX,
     IDY,
+    REL,
     XXX,
 }
 
@@ -35,6 +36,7 @@ impl CPU {
             AddrMode::IND => self.ind(),
             AddrMode::IDX => self.idx(),
             AddrMode::IDY => self.idy(),
+            AddrMode::REL => self.rel(),
             AddrMode::XXX => self.nnn(),
         }
     }
@@ -129,5 +131,16 @@ impl CPU {
         } else {
             0
         };
+    }
+    /// ### Addressing Modes - Relative
+    /// Relative addressing mode is used by branch instructions (e.g. BEQ, BNE, etc.)
+    /// which contain a signed 8 bit relative offset (e.g. -128 to +127)
+    /// which is added to program counter if the condition is true
+    pub fn rel(&mut self) -> Byte {
+        self.addr_rel = self.fetch_byte() as Word;
+        if (self.addr_rel & 0x80) != 0 {
+            self.addr_rel |= 0xFF00;
+        }
+        0
     }
 }

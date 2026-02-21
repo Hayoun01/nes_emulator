@@ -147,6 +147,22 @@ impl CPU {
         t[Opcode::DexIMP as usize] = Instruction::new("DEX", Self::dex, AddrMode::IMP, 2);
         // * DEY Instruction
         t[Opcode::DeyIMP as usize] = Instruction::new("DEY", Self::dey, AddrMode::IMP, 2);
+        // * BEQ Instruction
+        t[Opcode::BeqREL as usize] = Instruction::new("BEQ", Self::beq, AddrMode::REL, 2);
+        // * BNE Instruction
+        t[Opcode::BneREL as usize] = Instruction::new("BNE", Self::bne, AddrMode::REL, 2);
+        // * BCC Instruction
+        t[Opcode::BccREL as usize] = Instruction::new("BCC", Self::bcc, AddrMode::REL, 2);
+        // * BCS Instruction
+        t[Opcode::BcsREL as usize] = Instruction::new("BCS", Self::bcs, AddrMode::REL, 2);
+        // * BMI Instruction
+        t[Opcode::BmiREL as usize] = Instruction::new("BMI", Self::bmi, AddrMode::REL, 2);
+        // * BPL Instruction
+        t[Opcode::BplREL as usize] = Instruction::new("BPL", Self::bpl, AddrMode::REL, 2);
+        // * BVS Instruction
+        t[Opcode::BvsREL as usize] = Instruction::new("BVS", Self::bvs, AddrMode::REL, 2);
+        // * BVC Instruction
+        t[Opcode::BvcREL as usize] = Instruction::new("BVC", Self::bvc, AddrMode::REL, 2);
         t
     };
 
@@ -329,6 +345,49 @@ impl CPU {
     fn dey(&mut self) -> Byte {
         self.y = self.y.wrapping_sub(1);
         self.set_y_flags();
+        0
+    }
+    fn branch_helper(&mut self, condition: bool) {
+        if condition {
+            self.cycles += 1;
+            self.addr_abs = self.pc.wrapping_add(self.addr_rel);
+            if (self.addr_abs & 0xFF00) != (self.pc & 0xFF00) {
+                self.cycles += 1;
+            }
+            self.pc = self.addr_abs;
+        }
+    }
+
+    fn beq(&mut self) -> Byte {
+        self.branch_helper(self.flag.contains(Flag::ZERO));
+        0
+    }
+    fn bne(&mut self) -> Byte {
+        self.branch_helper(!self.flag.contains(Flag::ZERO));
+        0
+    }
+    fn bcc(&mut self) -> Byte {
+        self.branch_helper(!self.flag.contains(Flag::CARRY));
+        0
+    }
+    fn bcs(&mut self) -> Byte {
+        self.branch_helper(self.flag.contains(Flag::CARRY));
+        0
+    }
+    fn bmi(&mut self) -> Byte {
+        self.branch_helper(self.flag.contains(Flag::NEGATIVE));
+        0
+    }
+    fn bpl(&mut self) -> Byte {
+        self.branch_helper(!self.flag.contains(Flag::NEGATIVE));
+        0
+    }
+    fn bvs(&mut self) -> Byte {
+        self.branch_helper(self.flag.contains(Flag::OVERFLOW));
+        0
+    }
+    fn bvc(&mut self) -> Byte {
+        self.branch_helper(!self.flag.contains(Flag::OVERFLOW));
         0
     }
     fn _tmp(&mut self) -> Byte {
