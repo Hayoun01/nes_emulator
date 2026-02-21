@@ -283,38 +283,38 @@ pub enum Opcode {
     /// ### Exclusive OR Zero Page
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x05 | 2 | 3 |
-    EorZPG = 0x05,
+    /// | 0x45 | 2 | 3 |
+    EorZPG = 0x45,
     /// ### Exclusive OR Zero Page X
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x15 | 2 | 4 |
-    EorZPX = 0x15,
+    /// | 0x55 | 2 | 4 |
+    EorZPX = 0x55,
     /// ### Exclusive OR Absolute
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x0D | 3 | 4 |
-    EorABS = 0x0D,
+    /// | 0x4D | 3 | 4 |
+    EorABS = 0x4D,
     /// ### Exclusive OR Absolute X
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x1D | 3 | 4 (+1 if page crossed) |
-    EorABX = 0x1D,
+    /// | 0x5D | 3 | 4 (+1 if page crossed) |
+    EorABX = 0x5D,
     /// ### Exclusive OR Absolute Y
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x19 | 3 | 4 (+1 if page crossed) |
-    EorABY = 0x19,
+    /// | 0x59 | 3 | 4 (+1 if page crossed) |
+    EorABY = 0x59,
     /// ### Exclusive OR Indexed Indirect X
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x01 | 2 | 6 |
-    EorIDX = 0x01,
+    /// | 0x41 | 2 | 6 |
+    EorIDX = 0x41,
     /// ### Exclusive OR Indirect Indexed Y
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x11 | 2 | 5 (+1 if page crossed) |
-    EorIDY = 0x11,
+    /// | 0x51 | 2 | 5 (+1 if page crossed) |
+    EorIDY = 0x51,
     // * [ORA] Logical Inclusive OR
     /// ### Logical Inclusive OR Immediate
     /// | Opcode | Bytes | Cycles |
@@ -324,38 +324,38 @@ pub enum Opcode {
     /// ### Logical Inclusive OR Zero Page
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x45 | 2 | 3 |
-    OraZPG = 0x45,
+    /// | 0x05 | 2 | 3 |
+    OraZPG = 0x05,
     /// ### Logical Inclusive OR Zero Page X
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x55 | 2 | 4 |
-    OraZPX = 0x55,
+    /// | 0x15 | 2 | 4 |
+    OraZPX = 0x15,
     /// ### Logical Inclusive OR Absolute
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x4D | 3 | 4 |
-    OraABS = 0x4D,
+    /// | 0x0D | 3 | 4 |
+    OraABS = 0x0D,
     /// ### Logical Inclusive OR Absolute X
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x5D | 3 | 4 (+1 if page crossed) |
-    OraABX = 0x5D,
+    /// | 0x1D | 3 | 4 (+1 if page crossed) |
+    OraABX = 0x1D,
     /// ### Logical Inclusive OR Absolute Y
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x59 | 3 | 4 (+1 if page crossed) |
-    OraABY = 0x59,
+    /// | 0x19 | 3 | 4 (+1 if page crossed) |
+    OraABY = 0x19,
     /// ### Logical Inclusive OR Indexed Indirect X
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x41 | 2 | 6 |
-    OraIDX = 0x41,
+    /// | 0x01 | 2 | 6 |
+    OraIDX = 0x01,
     /// ### Logical Inclusive OR Indirect Indexed Y
     /// | Opcode | Bytes | Cycles |
     /// |--------|-------|--------|
-    /// | 0x51 | 2 | 5 (+1 if page crossed) |
-    OraIDY = 0x51,
+    /// | 0x11 | 2 | 5 (+1 if page crossed) |
+    OraIDY = 0x11,
     // * [BIT] Bit Test
     /// ### Bit Test Zero Page
     /// | Opcode | Bytes | Cycles |
