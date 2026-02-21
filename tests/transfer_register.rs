@@ -1,6 +1,6 @@
 mod common;
 use common::setup_cpu_bus;
-use cpu_6502::cpu::{Flag, instructions::Opcode};
+use cpu_6502::cpu::{Flag, instructions::opcode::Opcode};
 
 #[test]
 fn tax_can_transfer_non_zero_value_to_x_register() {

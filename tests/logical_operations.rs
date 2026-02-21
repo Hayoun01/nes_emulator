@@ -3,7 +3,7 @@ use bitflags::Flags;
 use common::setup_cpu_bus;
 use cpu_6502::{
     bus::Byte,
-    cpu::{Flag, instructions::Opcode},
+    cpu::{Flag, instructions::opcode::Opcode},
 };
 
 enum LogicalOp {

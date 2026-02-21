@@ -1,6 +1,6 @@
 mod common;
 use common::setup_cpu_bus;
-use cpu_6502::cpu::instructions::Opcode;
+use cpu_6502::cpu::instructions::opcode::Opcode;
 
 // * STA TESTS
 

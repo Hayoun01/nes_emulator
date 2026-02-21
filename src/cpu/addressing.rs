@@ -5,7 +5,44 @@ use crate::{
 
 // * Addressing Modes
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum AddrMode {
+    IMP,
+    IMM,
+    ZPG,
+    ZPX,
+    ZPY,
+    ABS,
+    ABX,
+    ABY,
+    IND,
+    IDX,
+    IDY,
+    XXX,
+}
+
 impl CPU {
+    pub fn resolve_addr(&mut self, mode: AddrMode) -> Byte {
+        match mode {
+            AddrMode::IMP => self.imp(),
+            AddrMode::IMM => self.imm(),
+            AddrMode::ZPG => self.zpg(),
+            AddrMode::ZPX => self.zpx(),
+            AddrMode::ZPY => self.zpy(),
+            AddrMode::ABS => self.abs(),
+            AddrMode::ABX => self.abx(),
+            AddrMode::ABY => self.aby(),
+            AddrMode::IND => self.ind(),
+            AddrMode::IDX => self.idx(),
+            AddrMode::IDY => self.idy(),
+            AddrMode::XXX => self.nnn(),
+        }
+    }
+
+    fn nnn(&mut self) -> Byte {
+        panic!("Illegal instruction!")
+    }
+
     /// ### Addressing Modes - Implied
     pub fn imp(&mut self) -> Byte {
         self.fetched = self.a;

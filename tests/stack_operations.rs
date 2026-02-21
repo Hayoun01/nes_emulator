@@ -2,7 +2,7 @@ mod common;
 use common::setup_cpu_bus;
 use cpu_6502::{
     bus::{Byte, Word},
-    cpu::{Flag, instructions::Opcode},
+    cpu::{Flag, instructions::opcode::Opcode},
 };
 
 // * TSX TESTS
