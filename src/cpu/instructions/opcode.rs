@@ -510,6 +510,48 @@ pub enum Opcode {
     /// | 0x50 | 2 | 2 (+1 if branch succeeds) |
     /// | | | (+2 if to a new page) |
     BvcREL = 0x50,
+    // * [CLC] Clear Carry Flag
+    /// ### Clear Carry Flag
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x18 | 1 | 2 |
+    ClcIMP = 0x18,
+    // * [CLD] Clear Decimal Mode
+    /// ### Clear Decimal Mode
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xD8 | 1 | 2 |
+    CldIMP = 0xD8,
+    // * [CLI] Clear Interrupt Disable
+    /// ### Clear Interrupt Disable
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x58 | 1 | 2 |
+    CliIMP = 0x58,
+    // * [CLV] Clear Overflow Flag
+    /// ### Clear Overflow Flag
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xB8 | 1 | 2 |
+    ClvIMP = 0xB8,
+    // * [SEC] Set Carry Flag
+    /// ### Set Carry Flag
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x38 | 1 | 2 |
+    SecIMP = 0x38,
+    // * [SED] Set Decimal Flag
+    /// ### Set Decimal Flag
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xF8 | 1 | 2 |
+    SedIMP = 0xF8,
+    // * [SEI] Set Interrupt Disable
+    /// ### Set Interrupt Disable
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x78 | 1 | 2 |
+    SeiIMP = 0x78,
 }
 
 impl TryFrom<Byte> for Opcode {
@@ -645,6 +687,20 @@ impl TryFrom<Byte> for Opcode {
             x if x == Self::BvsREL as Byte => Ok(Self::BvsREL),
             // * [BVC]
             x if x == Self::BvcREL as Byte => Ok(Self::BvcREL),
+            // * [CLC]
+            x if x == Self::ClcIMP as Byte => Ok(Self::ClcIMP),
+            // * [CLD]
+            x if x == Self::CldIMP as Byte => Ok(Self::CldIMP),
+            // * [CLI]
+            x if x == Self::CliIMP as Byte => Ok(Self::CliIMP),
+            // * [CLV]
+            x if x == Self::ClvIMP as Byte => Ok(Self::ClvIMP),
+            // * [SEC]
+            x if x == Self::SecIMP as Byte => Ok(Self::SecIMP),
+            // * [SED]
+            x if x == Self::SedIMP as Byte => Ok(Self::SedIMP),
+            // * [SEI]
+            x if x == Self::SeiIMP as Byte => Ok(Self::SeiIMP),
             _ => Err("unknown CPU instruction"),
         }
     }

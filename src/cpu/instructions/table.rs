@@ -163,6 +163,20 @@ impl CPU {
         t[Opcode::BvsREL as usize] = Instruction::new("BVS", Self::bvs, AddrMode::REL, 2);
         // * BVC Instruction
         t[Opcode::BvcREL as usize] = Instruction::new("BVC", Self::bvc, AddrMode::REL, 2);
+        // * CLC Instruction
+        t[Opcode::ClcIMP as usize] = Instruction::new("CLC", Self::clc, AddrMode::IMP, 2);
+        // * CLD Instruction
+        t[Opcode::CldIMP as usize] = Instruction::new("CLD", Self::cld, AddrMode::IMP, 2);
+        // * CLI Instruction
+        t[Opcode::CliIMP as usize] = Instruction::new("CLI", Self::cli, AddrMode::IMP, 2);
+        // * CLV Instruction
+        t[Opcode::ClvIMP as usize] = Instruction::new("CLV", Self::clv, AddrMode::IMP, 2);
+        // * SEC Instruction
+        t[Opcode::SecIMP as usize] = Instruction::new("SEC", Self::sec, AddrMode::IMP, 2);
+        // * SED Instruction
+        t[Opcode::SedIMP as usize] = Instruction::new("SED", Self::sed, AddrMode::IMP, 2);
+        // * SEI Instruction
+        t[Opcode::SeiIMP as usize] = Instruction::new("SEI", Self::sei, AddrMode::IMP, 2);
         t
     };
 
@@ -388,6 +402,34 @@ impl CPU {
     }
     fn bvc(&mut self) -> Byte {
         self.branch_helper(!self.flag.contains(Flag::OVERFLOW));
+        0
+    }
+    fn clc(&mut self) -> Byte {
+        self.flag.remove(Flag::CARRY);
+        0
+    }
+    fn cld(&mut self) -> Byte {
+        self.flag.remove(Flag::DECIMAL_MODE);
+        0
+    }
+    fn cli(&mut self) -> Byte {
+        self.flag.remove(Flag::INTERRUPT_DISABLE);
+        0
+    }
+    fn clv(&mut self) -> Byte {
+        self.flag.remove(Flag::OVERFLOW);
+        0
+    }
+    fn sec(&mut self) -> Byte {
+        self.flag.insert(Flag::CARRY);
+        0
+    }
+    fn sed(&mut self) -> Byte {
+        self.flag.insert(Flag::DECIMAL_MODE);
+        0
+    }
+    fn sei(&mut self) -> Byte {
+        self.flag.insert(Flag::INTERRUPT_DISABLE);
         0
     }
     fn _tmp(&mut self) -> Byte {
