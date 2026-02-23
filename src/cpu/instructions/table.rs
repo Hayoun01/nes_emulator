@@ -1,6 +1,6 @@
 use super::opcode::Opcode;
 use crate::{
-    bus::Byte,
+    bus::{Byte, Word},
     cpu::{CPU, Flag, addressing::AddrMode},
 };
 
@@ -177,6 +177,24 @@ impl CPU {
         t[Opcode::SedIMP as usize] = Instruction::new("SED", Self::sed, AddrMode::IMP, 2);
         // * SEI Instruction
         t[Opcode::SeiIMP as usize] = Instruction::new("SEI", Self::sei, AddrMode::IMP, 2);
+        // * ADC Instruction
+        t[Opcode::AdcIMM as usize] = Instruction::new("ADC", Self::adc, AddrMode::IMM, 2);
+        t[Opcode::AdcZPG as usize] = Instruction::new("ADC", Self::adc, AddrMode::ZPG, 3);
+        t[Opcode::AdcZPX as usize] = Instruction::new("ADC", Self::adc, AddrMode::ZPX, 4);
+        t[Opcode::AdcABS as usize] = Instruction::new("ADC", Self::adc, AddrMode::ABS, 4);
+        t[Opcode::AdcABX as usize] = Instruction::new("ADC", Self::adc, AddrMode::ABX, 4);
+        t[Opcode::AdcABY as usize] = Instruction::new("ADC", Self::adc, AddrMode::ABY, 4);
+        t[Opcode::AdcIDX as usize] = Instruction::new("ADC", Self::adc, AddrMode::IDX, 6);
+        t[Opcode::AdcIDY as usize] = Instruction::new("ADC", Self::adc, AddrMode::IDY, 5);
+        // * SBC Instruction
+        t[Opcode::SbcIMM as usize] = Instruction::new("SBC", Self::sbc, AddrMode::IMM, 2);
+        t[Opcode::SbcZPG as usize] = Instruction::new("SBC", Self::sbc, AddrMode::ZPG, 3);
+        t[Opcode::SbcZPX as usize] = Instruction::new("SBC", Self::sbc, AddrMode::ZPX, 4);
+        t[Opcode::SbcABS as usize] = Instruction::new("SBC", Self::sbc, AddrMode::ABS, 4);
+        t[Opcode::SbcABX as usize] = Instruction::new("SBC", Self::sbc, AddrMode::ABX, 4);
+        t[Opcode::SbcABY as usize] = Instruction::new("SBC", Self::sbc, AddrMode::ABY, 4);
+        t[Opcode::SbcIDX as usize] = Instruction::new("SBC", Self::sbc, AddrMode::IDX, 6);
+        t[Opcode::SbcIDY as usize] = Instruction::new("SBC", Self::sbc, AddrMode::IDY, 5);
         t
     };
 
@@ -430,6 +448,32 @@ impl CPU {
     }
     fn sei(&mut self) -> Byte {
         self.flag.insert(Flag::INTERRUPT_DISABLE);
+        0
+    }
+    fn adc(&mut self) -> Byte {
+        self.fetch();
+        let mut tmp: Word = self.a as Word;
+        tmp += self.fetched as Word;
+        tmp += self.flag.contains(Flag::CARRY) as Word;
+        let is_overflow = (((!self.a ^ self.fetched) & (self.a ^ tmp as Byte)) & 0x80) != 0;
+        self.flag.set(Flag::OVERFLOW, is_overflow);
+        self.flag.set(Flag::ZERO, (tmp & 0x00FF) == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        self.flag.set(Flag::CARRY, (tmp & 0x100) != 0);
+        self.a = tmp as Byte;
+        0
+    }
+    fn sbc(&mut self) -> Byte {
+        self.fetch();
+        let mut tmp: Word = self.a as Word;
+        tmp += self.fetched as Word ^ 0x00FF;
+        tmp += self.flag.contains(Flag::CARRY) as Word;
+        let is_overflow = (((self.a ^ self.fetched) & (self.a ^ tmp as Byte)) & 0x80) != 0;
+        self.flag.set(Flag::OVERFLOW, is_overflow);
+        self.flag.set(Flag::ZERO, (tmp & 0x00FF) == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        self.flag.set(Flag::CARRY, (tmp & 0x100) != 0);
+        self.a = tmp as Byte;
         0
     }
     fn _tmp(&mut self) -> Byte {

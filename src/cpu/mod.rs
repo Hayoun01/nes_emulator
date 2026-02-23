@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    bus::{Bus, Byte, Word}, cpu::addressing::AddrMode,
+    bus::{Bus, Byte, Word},
+    cpu::addressing::AddrMode,
 };
 use bitflags::{Flags, bitflags};
 

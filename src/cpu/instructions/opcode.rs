@@ -552,6 +552,88 @@ pub enum Opcode {
     /// |--------|-------|--------|
     /// | 0x78 | 1 | 2 |
     SeiIMP = 0x78,
+    // * [ADC] Add with Carry
+    /// ### Add with Carry Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x69 | 2 | 2 |
+    AdcIMM = 0x69,
+    /// ### Add with Carry Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x65 | 2 | 3 |
+    AdcZPG = 0x65,
+    /// ### Add with Carry Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x75 | 2 | 4 |
+    AdcZPX = 0x75,
+    /// ### Add with Carry Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x6D | 3 | 4 |
+    AdcABS = 0x6D,
+    /// ### Add with Carry Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x7D | 3 | 4 (+1 if page crossed) |
+    AdcABX = 0x7D,
+    /// ### Add with Carry Absolute Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x79 | 3 | 4 (+1 if page crossed) |
+    AdcABY = 0x79,
+    /// ### Add with Carry Indexed Indirect X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x61 | 2 | 6 |
+    AdcIDX = 0x61,
+    /// ### Add with Carry Indirect Indexed Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x71 | 2 | 5 (+1 if page crossed) |
+    AdcIDY = 0x71,
+    // * [SBC] Subtract with Carry
+    /// ### Subtract with Carry Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xE9 | 2 | 2 |
+    SbcIMM = 0xE9,
+    /// ### Subtract with Carry Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xE5 | 2 | 3 |
+    SbcZPG = 0xE5,
+    /// ### Subtract with Carry Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xF5 | 2 | 4 |
+    SbcZPX = 0xF5,
+    /// ### Subtract with Carry Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xED | 3 | 4 |
+    SbcABS = 0xED,
+    /// ### Subtract with Carry Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xFD | 3 | 4 (+1 if page crossed) |
+    SbcABX = 0xFD,
+    /// ### Subtract with Carry Absolute Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xF9 | 3 | 4 (+1 if page crossed) |
+    SbcABY = 0xF9,
+    /// ### Subtract with Carry Indexed Indirect X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xE1 | 2 | 6 |
+    SbcIDX = 0xE1,
+    /// ### Subtract with Carry Indirect Indexed Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xF1 | 2 | 5 (+1 if page crossed) |
+    SbcIDY = 0xF1,
 }
 
 impl TryFrom<Byte> for Opcode {
@@ -701,6 +783,24 @@ impl TryFrom<Byte> for Opcode {
             x if x == Self::SedIMP as Byte => Ok(Self::SedIMP),
             // * [SEI]
             x if x == Self::SeiIMP as Byte => Ok(Self::SeiIMP),
+            // * [ADC]
+            x if x == Self::AdcIMM as Byte => Ok(Self::AdcIMM),
+            x if x == Self::AdcZPG as Byte => Ok(Self::AdcZPG),
+            x if x == Self::AdcZPX as Byte => Ok(Self::AdcZPX),
+            x if x == Self::AdcABS as Byte => Ok(Self::AdcABS),
+            x if x == Self::AdcABX as Byte => Ok(Self::AdcABX),
+            x if x == Self::AdcABY as Byte => Ok(Self::AdcABY),
+            x if x == Self::AdcIDX as Byte => Ok(Self::AdcIDX),
+            x if x == Self::AdcIDY as Byte => Ok(Self::AdcIDY),
+            // * [SBC]
+            x if x == Self::SbcIMM as Byte => Ok(Self::SbcIMM),
+            x if x == Self::SbcZPG as Byte => Ok(Self::SbcZPG),
+            x if x == Self::SbcZPX as Byte => Ok(Self::SbcZPX),
+            x if x == Self::SbcABS as Byte => Ok(Self::SbcABS),
+            x if x == Self::SbcABX as Byte => Ok(Self::SbcABX),
+            x if x == Self::SbcABY as Byte => Ok(Self::SbcABY),
+            x if x == Self::SbcIDX as Byte => Ok(Self::SbcIDX),
+            x if x == Self::SbcIDY as Byte => Ok(Self::SbcIDY),
             _ => Err("unknown CPU instruction"),
         }
     }
