@@ -220,7 +220,7 @@ impl CPU {
             ins += " ";
             match Self::INSTRUCTIONS[opcode as usize].addr_mode {
                 AddrMode::IMP => {
-                    ins += &format!("{{IMP}}");
+                    ins += "{IMP}";
                 }
                 AddrMode::IMM => {
                     let v = self.read(addr as Word, true);

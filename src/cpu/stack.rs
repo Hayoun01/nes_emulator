@@ -23,8 +23,7 @@ impl CPU {
 
     pub fn pull_byte(&mut self) -> Byte {
         self.sp = self.sp.wrapping_add(1);
-        let data = self.read_byte(self.stack_addr());
-        data
+        self.read_byte(self.stack_addr())
     }
     pub fn pull_word(&mut self) -> Word {
         let lo = self.pull_byte() as Word;

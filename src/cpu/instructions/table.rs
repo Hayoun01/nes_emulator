@@ -206,7 +206,7 @@ impl CPU {
         if Self::INSTRUCTIONS[self.opcode as usize].addr_mode != AddrMode::IMP {
             self.fetched = self.read_byte(self.addr_abs);
         }
-        return self.fetched;
+        self.fetched
     }
 
     fn set_a_flags(&mut self) {
@@ -298,19 +298,19 @@ impl CPU {
     }
     fn and(&mut self) -> Byte {
         self.fetch();
-        self.a = self.a & self.fetched;
+        self.a &= self.fetched;
         self.set_a_flags();
         1
     }
     fn eor(&mut self) -> Byte {
         self.fetch();
-        self.a = self.a ^ self.fetched;
+        self.a ^= self.fetched;
         self.set_a_flags();
         1
     }
     fn ora(&mut self) -> Byte {
         self.fetch();
-        self.a = self.a | self.fetched;
+        self.a |= self.fetched;
         self.set_a_flags();
         1
     }

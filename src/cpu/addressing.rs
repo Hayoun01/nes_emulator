@@ -87,22 +87,22 @@ impl CPU {
         self.addr_abs = self.fetch_word();
         let [_, hi] = self.addr_abs.to_le_bytes();
         self.addr_abs = self.addr_abs.wrapping_add(self.x as Word);
-        return if Self::page_crossed(self.addr_abs, hi) {
+        if Self::page_crossed(self.addr_abs, hi) {
             1
         } else {
             0
-        };
+        }
     }
     /// ### Addressing Modes - Absolute with Y offset
     pub fn aby(&mut self) -> Byte {
         self.addr_abs = self.fetch_word();
         let [_, hi] = self.addr_abs.to_le_bytes();
         self.addr_abs = self.addr_abs.wrapping_add(self.y as Word);
-        return if Self::page_crossed(self.addr_abs, hi) {
+        if Self::page_crossed(self.addr_abs, hi) {
             1
         } else {
             0
-        };
+        }
     }
     /// ### Addressing Modes - Indirect (aka Pointers)
     /// only used with **JMP** instruction
@@ -126,11 +126,11 @@ impl CPU {
         let addr = self.read_word_zp(zp_addr);
         let [_, hi] = addr.to_le_bytes();
         self.addr_abs = addr.wrapping_add(self.y as Word);
-        return if Self::page_crossed(self.addr_abs, hi) {
+        if Self::page_crossed(self.addr_abs, hi) {
             1
         } else {
             0
-        };
+        }
     }
     /// ### Addressing Modes - Relative
     /// Relative addressing mode is used by branch instructions (e.g. BEQ, BNE, etc.)
