@@ -7,15 +7,15 @@ use cpu_6502::{
 };
 
 enum LogicalOp {
-    AND,
-    XOR,
+    And,
+    Xor,
     OR,
 }
 
 fn do_logical_op(a: Byte, b: Byte, op: LogicalOp) -> Byte {
     match op {
-        LogicalOp::AND => a & b,
-        LogicalOp::XOR => a ^ b,
+        LogicalOp::And => a & b,
+        LogicalOp::Xor => a ^ b,
         LogicalOp::OR => a | b,
     }
 }
@@ -26,8 +26,8 @@ fn test_logical_op_on_a_register_immediate(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndIMM.into(),
-            LogicalOp::XOR => Opcode::EorIMM.into(),
+            LogicalOp::And => Opcode::AndIMM.into(),
+            LogicalOp::Xor => Opcode::EorIMM.into(),
             LogicalOp::OR => Opcode::OraIMM.into(),
         },
     );
@@ -50,8 +50,8 @@ fn test_logical_op_on_a_register_zero_page(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndZPG.into(),
-            LogicalOp::XOR => Opcode::EorZPG.into(),
+            LogicalOp::And => Opcode::AndZPG.into(),
+            LogicalOp::Xor => Opcode::EorZPG.into(),
             LogicalOp::OR => Opcode::OraZPG.into(),
         },
     );
@@ -76,8 +76,8 @@ fn test_logical_op_on_a_register_zero_page_x(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndZPX.into(),
-            LogicalOp::XOR => Opcode::EorZPX.into(),
+            LogicalOp::And => Opcode::AndZPX.into(),
+            LogicalOp::Xor => Opcode::EorZPX.into(),
             LogicalOp::OR => Opcode::OraZPX.into(),
         },
     );
@@ -101,8 +101,8 @@ fn test_logical_op_on_a_register_absolute(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndABS.into(),
-            LogicalOp::XOR => Opcode::EorABS.into(),
+            LogicalOp::And => Opcode::AndABS.into(),
+            LogicalOp::Xor => Opcode::EorABS.into(),
             LogicalOp::OR => Opcode::OraABS.into(),
         },
     );
@@ -128,8 +128,8 @@ fn test_logical_op_on_a_register_absolute_x(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndABX.into(),
-            LogicalOp::XOR => Opcode::EorABX.into(),
+            LogicalOp::And => Opcode::AndABX.into(),
+            LogicalOp::Xor => Opcode::EorABX.into(),
             LogicalOp::OR => Opcode::OraABX.into(),
         },
     );
@@ -155,8 +155,8 @@ fn test_logical_op_on_a_register_absolute_x_page_crossed(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndABX.into(),
-            LogicalOp::XOR => Opcode::EorABX.into(),
+            LogicalOp::And => Opcode::AndABX.into(),
+            LogicalOp::Xor => Opcode::EorABX.into(),
             LogicalOp::OR => Opcode::OraABX.into(),
         },
     );
@@ -182,8 +182,8 @@ fn test_logical_op_on_a_register_absolute_y(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndABY.into(),
-            LogicalOp::XOR => Opcode::EorABY.into(),
+            LogicalOp::And => Opcode::AndABY.into(),
+            LogicalOp::Xor => Opcode::EorABY.into(),
             LogicalOp::OR => Opcode::OraABY.into(),
         },
     );
@@ -209,8 +209,8 @@ fn test_logical_op_on_a_register_absolute_y_page_crossed(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndABY.into(),
-            LogicalOp::XOR => Opcode::EorABY.into(),
+            LogicalOp::And => Opcode::AndABY.into(),
+            LogicalOp::Xor => Opcode::EorABY.into(),
             LogicalOp::OR => Opcode::OraABY.into(),
         },
     );
@@ -236,8 +236,8 @@ fn test_logical_op_on_a_register_indexed_indirect_x(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndIDX.into(),
-            LogicalOp::XOR => Opcode::EorIDX.into(),
+            LogicalOp::And => Opcode::AndIDX.into(),
+            LogicalOp::Xor => Opcode::EorIDX.into(),
             LogicalOp::OR => Opcode::OraIDX.into(),
         },
     );
@@ -264,8 +264,8 @@ fn test_logical_op_on_a_register_indirect_indexed_y(op: LogicalOp) {
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndIDY.into(),
-            LogicalOp::XOR => Opcode::EorIDY.into(),
+            LogicalOp::And => Opcode::AndIDY.into(),
+            LogicalOp::Xor => Opcode::EorIDY.into(),
             LogicalOp::OR => Opcode::OraIDY.into(),
         },
     );
@@ -292,8 +292,8 @@ fn test_logical_op_on_a_register_indirect_indexed_y_page_crossed(op: LogicalOp) 
     cpu.write(
         0xFFFC,
         match op {
-            LogicalOp::AND => Opcode::AndIDY.into(),
-            LogicalOp::XOR => Opcode::EorIDY.into(),
+            LogicalOp::And => Opcode::AndIDY.into(),
+            LogicalOp::Xor => Opcode::EorIDY.into(),
             LogicalOp::OR => Opcode::OraIDY.into(),
         },
     );
@@ -316,113 +316,113 @@ fn test_logical_op_on_a_register_indirect_indexed_y_page_crossed(op: LogicalOp) 
 // * AND TESTS
 #[test]
 fn and_imm_can_and_with_a_register() {
-    test_logical_op_on_a_register_immediate(LogicalOp::AND);
+    test_logical_op_on_a_register_immediate(LogicalOp::And);
 }
 
 #[test]
 fn and_zpg_can_and_with_a_register() {
-    test_logical_op_on_a_register_zero_page(LogicalOp::AND);
+    test_logical_op_on_a_register_zero_page(LogicalOp::And);
 }
 
 #[test]
 fn and_zpx_can_and_with_a_register() {
-    test_logical_op_on_a_register_zero_page_x(LogicalOp::AND);
+    test_logical_op_on_a_register_zero_page_x(LogicalOp::And);
 }
 
 #[test]
 fn and_abs_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute(LogicalOp::AND);
+    test_logical_op_on_a_register_absolute(LogicalOp::And);
 }
 
 #[test]
 fn and_abs_x_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute_x(LogicalOp::AND);
+    test_logical_op_on_a_register_absolute_x(LogicalOp::And);
 }
 
 #[test]
 fn and_abs_x_page_crossed_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute_x_page_crossed(LogicalOp::AND);
+    test_logical_op_on_a_register_absolute_x_page_crossed(LogicalOp::And);
 }
 
 #[test]
 fn and_abs_y_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute_y(LogicalOp::AND);
+    test_logical_op_on_a_register_absolute_y(LogicalOp::And);
 }
 
 #[test]
 fn and_abs_y_page_crossed_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute_y_page_crossed(LogicalOp::AND);
+    test_logical_op_on_a_register_absolute_y_page_crossed(LogicalOp::And);
 }
 
 #[test]
 fn and_idx_can_and_with_a_register() {
-    test_logical_op_on_a_register_indexed_indirect_x(LogicalOp::AND);
+    test_logical_op_on_a_register_indexed_indirect_x(LogicalOp::And);
 }
 
 #[test]
 fn and_idy_can_and_with_a_register() {
-    test_logical_op_on_a_register_indirect_indexed_y(LogicalOp::AND);
+    test_logical_op_on_a_register_indirect_indexed_y(LogicalOp::And);
 }
 
 #[test]
 fn and_idy_page_crossed_can_and_with_a_register() {
-    test_logical_op_on_a_register_indirect_indexed_y_page_crossed(LogicalOp::AND);
+    test_logical_op_on_a_register_indirect_indexed_y_page_crossed(LogicalOp::And);
 }
 
 // * EOR TESTS
 #[test]
 fn eor_imm_can_and_with_a_register() {
-    test_logical_op_on_a_register_immediate(LogicalOp::XOR);
+    test_logical_op_on_a_register_immediate(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_zpg_can_and_with_a_register() {
-    test_logical_op_on_a_register_zero_page(LogicalOp::XOR);
+    test_logical_op_on_a_register_zero_page(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_zpx_can_and_with_a_register() {
-    test_logical_op_on_a_register_zero_page_x(LogicalOp::XOR);
+    test_logical_op_on_a_register_zero_page_x(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_abs_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute(LogicalOp::XOR);
+    test_logical_op_on_a_register_absolute(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_abs_x_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute_x(LogicalOp::XOR);
+    test_logical_op_on_a_register_absolute_x(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_abs_x_page_crossed_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute_x_page_crossed(LogicalOp::XOR);
+    test_logical_op_on_a_register_absolute_x_page_crossed(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_abs_y_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute_y(LogicalOp::XOR);
+    test_logical_op_on_a_register_absolute_y(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_abs_y_page_crossed_can_and_with_a_register() {
-    test_logical_op_on_a_register_absolute_y_page_crossed(LogicalOp::XOR);
+    test_logical_op_on_a_register_absolute_y_page_crossed(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_idx_can_and_with_a_register() {
-    test_logical_op_on_a_register_indexed_indirect_x(LogicalOp::XOR);
+    test_logical_op_on_a_register_indexed_indirect_x(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_idy_can_and_with_a_register() {
-    test_logical_op_on_a_register_indirect_indexed_y(LogicalOp::XOR);
+    test_logical_op_on_a_register_indirect_indexed_y(LogicalOp::Xor);
 }
 
 #[test]
 fn eor_idy_page_crossed_can_and_with_a_register() {
-    test_logical_op_on_a_register_indirect_indexed_y_page_crossed(LogicalOp::XOR);
+    test_logical_op_on_a_register_indirect_indexed_y_page_crossed(LogicalOp::Xor);
 }
 
 // * ORA TESTS
