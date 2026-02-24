@@ -212,6 +212,30 @@ impl CPU {
         t[Opcode::CpyIMM as usize] = Instruction::new("CPY", Self::cpy, AddrMode::IMM, 2);
         t[Opcode::CpyZPG as usize] = Instruction::new("CPY", Self::cpy, AddrMode::ZPG, 3);
         t[Opcode::CpyABS as usize] = Instruction::new("CPY", Self::cpy, AddrMode::ABS, 4);
+        // * ASL Instruction
+        t[Opcode::AslIMP as usize] = Instruction::new("ASL", Self::asl, AddrMode::IMP, 2);
+        t[Opcode::AslZPG as usize] = Instruction::new("ASL", Self::asl, AddrMode::ZPG, 5);
+        t[Opcode::AslZPX as usize] = Instruction::new("ASL", Self::asl, AddrMode::ZPX, 6);
+        t[Opcode::AslABS as usize] = Instruction::new("ASL", Self::asl, AddrMode::ABS, 6);
+        t[Opcode::AslABX as usize] = Instruction::new("ASL", Self::asl, AddrMode::ABX, 7);
+        // * LSR Instruction
+        t[Opcode::LsrIMP as usize] = Instruction::new("LSR", Self::lsr, AddrMode::IMP, 2);
+        t[Opcode::LsrZPG as usize] = Instruction::new("LSR", Self::lsr, AddrMode::ZPG, 5);
+        t[Opcode::LsrZPX as usize] = Instruction::new("LSR", Self::lsr, AddrMode::ZPX, 6);
+        t[Opcode::LsrABS as usize] = Instruction::new("LSR", Self::lsr, AddrMode::ABS, 6);
+        t[Opcode::LsrABX as usize] = Instruction::new("LSR", Self::lsr, AddrMode::ABX, 7);
+        // * ROL Instruction
+        t[Opcode::RolIMP as usize] = Instruction::new("ROL", Self::rol, AddrMode::IMP, 2);
+        t[Opcode::RolZPG as usize] = Instruction::new("ROL", Self::rol, AddrMode::ZPG, 5);
+        t[Opcode::RolZPX as usize] = Instruction::new("ROL", Self::rol, AddrMode::ZPX, 6);
+        t[Opcode::RolABS as usize] = Instruction::new("ROL", Self::rol, AddrMode::ABS, 6);
+        t[Opcode::RolABX as usize] = Instruction::new("ROL", Self::rol, AddrMode::ABX, 7);
+        // * ROR Instruction
+        t[Opcode::RorIMP as usize] = Instruction::new("ROR", Self::ror, AddrMode::IMP, 2);
+        t[Opcode::RorZPG as usize] = Instruction::new("ROR", Self::ror, AddrMode::ZPG, 5);
+        t[Opcode::RorZPX as usize] = Instruction::new("ROR", Self::ror, AddrMode::ZPX, 6);
+        t[Opcode::RorABS as usize] = Instruction::new("ROR", Self::ror, AddrMode::ABS, 6);
+        t[Opcode::RorABX as usize] = Instruction::new("ROR", Self::ror, AddrMode::ABX, 7);
         t
     };
 
@@ -515,6 +539,59 @@ impl CPU {
         self.flag.set(Flag::CARRY, self.y >= self.fetched);
         self.flag.set(Flag::ZERO, tmp == 0);
         self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        0
+    }
+    fn asl(&mut self) -> Byte {
+        self.fetch();
+        let tmp = (self.fetched as Word).wrapping_shl(1);
+        self.flag.set(Flag::CARRY, (tmp & 0x100) != 0);
+        self.flag.set(Flag::ZERO, (tmp & 0x00FF) == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        if Self::INSTRUCTIONS[self.opcode as usize].addr_mode == AddrMode::IMP {
+            self.a = tmp as Byte;
+        } else {
+            self.write(self.addr_abs, tmp as Byte);
+        }
+        0
+    }
+    fn lsr(&mut self) -> Byte {
+        self.fetch();
+        self.flag.set(Flag::CARRY, (self.fetched & 0x01) != 0);
+        let tmp = (self.fetched as Word).wrapping_shr(1);
+        self.flag.set(Flag::ZERO, (tmp & 0x00FF) == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        if Self::INSTRUCTIONS[self.opcode as usize].addr_mode == AddrMode::IMP {
+            self.a = tmp as Byte;
+        } else {
+            self.write(self.addr_abs, tmp as Byte);
+        }
+        0
+    }
+    fn rol(&mut self) -> Byte {
+        self.fetch();
+        let tmp = (self.fetched as Word).wrapping_shl(1) | self.flag.contains(Flag::CARRY) as Word;
+        self.flag.set(Flag::CARRY, (self.fetched & 0x80) != 0);
+        self.flag.set(Flag::ZERO, (tmp & 0x00FF) == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        if Self::INSTRUCTIONS[self.opcode as usize].addr_mode == AddrMode::IMP {
+            self.a = tmp as Byte;
+        } else {
+            self.write(self.addr_abs, tmp as Byte);
+        }
+        0
+    }
+    fn ror(&mut self) -> Byte {
+        self.fetch();
+        let tmp = (self.fetched as Word).wrapping_shr(1)
+            | (self.flag.contains(Flag::CARRY) as Word).wrapping_shl(7);
+        self.flag.set(Flag::CARRY, (self.fetched & 0x01) != 0);
+        self.flag.set(Flag::ZERO, (tmp & 0x00FF) == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        if Self::INSTRUCTIONS[self.opcode as usize].addr_mode == AddrMode::IMP {
+            self.a = tmp as Byte;
+        } else {
+            self.write(self.addr_abs, tmp as Byte);
+        }
         0
     }
     fn _tmp(&mut self) -> Byte {

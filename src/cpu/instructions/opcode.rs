@@ -707,6 +707,110 @@ pub enum Opcode {
     /// |--------|-------|--------|
     /// | 0xCC | 3 | 4 |
     CpyABS = 0xCC,
+    // * [ASL] Arithmetic Shift Left
+    /// ### Arithmetic Shift Left Implicit
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x0A | 1 | 2 |
+    AslIMP = 0x0A,
+    /// ### Arithmetic Shift Left Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x06 | 2 | 5 |
+    AslZPG = 0x06,
+    /// ### Arithmetic Shift Left Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x16 | 2 | 6 |
+    AslZPX = 0x16,
+    /// ### Arithmetic Shift Left Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x0E | 3 | 6 |
+    AslABS = 0x0E,
+    /// ### Arithmetic Shift Left Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x1E | 3 | 7 |
+    AslABX = 0x1E,
+    // * [LSR] Logical Shift Right
+    /// ### Logical Shift Right Implicit
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x4A | 1 | 2 |
+    LsrIMP = 0x4A,
+    /// ### Logical Shift Right Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x46 | 2 | 5 |
+    LsrZPG = 0x46,
+    /// ### Logical Shift Right Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x56 | 2 | 6 |
+    LsrZPX = 0x56,
+    /// ### Logical Shift Right Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x4E | 3 | 6 |
+    LsrABS = 0x4E,
+    /// ### Logical Shift Right Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x5E | 3 | 7 |
+    LsrABX = 0x5E,
+    // * [ROL] Rotate Left
+    /// ### Rotate Left Implicit
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x2A | 1 | 2 |
+    RolIMP = 0x2A,
+    /// ### Rotate Left Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x26 | 2 | 5 |
+    RolZPG = 0x26,
+    /// ### Rotate Left Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x36 | 2 | 6 |
+    RolZPX = 0x36,
+    /// ### Rotate Left Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x2E | 3 | 6 |
+    RolABS = 0x2E,
+    /// ### Rotate Left Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x3E | 3 | 7 |
+    RolABX = 0x3E,
+    // * [ROR] Rotate Right
+    /// ### Rotate Right Implicit
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x6A | 1 | 2 |
+    RorIMP = 0x6A,
+    /// ### Rotate Right Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x66 | 2 | 5 |
+    RorZPG = 0x66,
+    /// ### Rotate Right Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x76 | 2 | 6 |
+    RorZPX = 0x76,
+    /// ### Rotate Right Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x6E | 3 | 6 |
+    RorABS = 0x6E,
+    /// ### Rotate Right Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x7E | 3 | 7 |
+    RorABX = 0x7E,
 }
 
 impl TryFrom<Byte> for Opcode {
@@ -891,6 +995,30 @@ impl TryFrom<Byte> for Opcode {
             x if x == Self::CpyIMM as Byte => Ok(Self::CpyIMM),
             x if x == Self::CpyZPG as Byte => Ok(Self::CpyZPG),
             x if x == Self::CpyABS as Byte => Ok(Self::CpyABS),
+            // * [ASL]
+            x if x == Self::AslIMP as Byte => Ok(Self::AslIMP),
+            x if x == Self::AslZPG as Byte => Ok(Self::AslZPG),
+            x if x == Self::AslZPX as Byte => Ok(Self::AslZPX),
+            x if x == Self::AslABS as Byte => Ok(Self::AslABS),
+            x if x == Self::AslABX as Byte => Ok(Self::AslABX),
+            // * [LSR]
+            x if x == Self::LsrIMP as Byte => Ok(Self::LsrIMP),
+            x if x == Self::LsrZPG as Byte => Ok(Self::LsrZPG),
+            x if x == Self::LsrZPX as Byte => Ok(Self::LsrZPX),
+            x if x == Self::LsrABS as Byte => Ok(Self::LsrABS),
+            x if x == Self::LsrABX as Byte => Ok(Self::LsrABX),
+            // * [ROL]
+            x if x == Self::RolIMP as Byte => Ok(Self::RolIMP),
+            x if x == Self::RolZPG as Byte => Ok(Self::RolZPG),
+            x if x == Self::RolZPX as Byte => Ok(Self::RolZPX),
+            x if x == Self::RolABS as Byte => Ok(Self::RolABS),
+            x if x == Self::RolABX as Byte => Ok(Self::RolABX),
+            // * [ROR]
+            x if x == Self::RorIMP as Byte => Ok(Self::RorIMP),
+            x if x == Self::RorZPG as Byte => Ok(Self::RorZPG),
+            x if x == Self::RorZPX as Byte => Ok(Self::RorZPX),
+            x if x == Self::RorABS as Byte => Ok(Self::RorABS),
+            x if x == Self::RorABX as Byte => Ok(Self::RorABX),
             _ => Err("unknown CPU instruction"),
         }
     }
