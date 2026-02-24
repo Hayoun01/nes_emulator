@@ -13,6 +13,6 @@ fn cpu_initialized_properly() {
 #[should_panic(expected = "Illegal instruction!")]
 fn invalid_cpu_instruction() {
     let mut cpu = setup_cpu_bus();
-    cpu.write(0xFFFC, 0x0);
+    cpu.write(0xFFFC, 0x37);
     cpu.execute();
 }

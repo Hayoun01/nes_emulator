@@ -811,6 +811,24 @@ pub enum Opcode {
     /// |--------|-------|--------|
     /// | 0x7E | 3 | 7 |
     RorABX = 0x7E,
+    // * [BRK] Force Interrupt
+    /// ### Force Interrupt
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x00 | 1 | 7 |
+    BrkIMP = 0x00,
+    // * [NOP] No Operation
+    /// ### No Operation
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xEA | 1 | 2 |
+    NopIMP = 0xEA,
+    // * [RTI] Return from Interrupt
+    /// ### Return from Interrupt
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0x40 | 1 | 6 |
+    RtiIMP = 0x40,
 }
 
 impl TryFrom<Byte> for Opcode {
@@ -1019,6 +1037,12 @@ impl TryFrom<Byte> for Opcode {
             x if x == Self::RorZPX as Byte => Ok(Self::RorZPX),
             x if x == Self::RorABS as Byte => Ok(Self::RorABS),
             x if x == Self::RorABX as Byte => Ok(Self::RorABX),
+            // * [BRK]
+            x if x == Self::BrkIMP as Byte => Ok(Self::BrkIMP),
+            // * [NOP]
+            x if x == Self::NopIMP as Byte => Ok(Self::NopIMP),
+            // * [RTI]
+            x if x == Self::RtiIMP as Byte => Ok(Self::RtiIMP),
             _ => Err("unknown CPU instruction"),
         }
     }

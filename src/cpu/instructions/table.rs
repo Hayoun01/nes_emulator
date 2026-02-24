@@ -236,6 +236,12 @@ impl CPU {
         t[Opcode::RorZPX as usize] = Instruction::new("ROR", Self::ror, AddrMode::ZPX, 6);
         t[Opcode::RorABS as usize] = Instruction::new("ROR", Self::ror, AddrMode::ABS, 6);
         t[Opcode::RorABX as usize] = Instruction::new("ROR", Self::ror, AddrMode::ABX, 7);
+        // * BRK Instruction
+        t[Opcode::BrkIMP as usize] = Instruction::new("BRK", Self::brk, AddrMode::IMP, 7);
+        // * NOP Instruction
+        t[Opcode::NopIMP as usize] = Instruction::new("NOP", Self::nop, AddrMode::IMP, 2);
+        // * RTI Instruction
+        t[Opcode::RtiIMP as usize] = Instruction::new("RTI", Self::rti, AddrMode::IMP, 6);
         t
     };
 
@@ -592,6 +598,24 @@ impl CPU {
         } else {
             self.write(self.addr_abs, tmp as Byte);
         }
+        0
+    }
+    fn brk(&mut self) -> Byte {
+        self.push_word(self.pc.wrapping_add(1));
+        self.flag.insert(Flag::BREAK_COMMAND);
+        self.push_byte(self.flag.bits());
+        self.flag.remove(Flag::BREAK_COMMAND);
+        self.flag.insert(Flag::INTERRUPT_DISABLE);
+        self.pc = self.read_word(0xFFFE);
+        0
+    }
+    fn nop(&mut self) -> Byte {
+        0
+    }
+    fn rti(&mut self) -> Byte {
+        self.flag = Flag::from_bits_truncate(self.pull_byte());
+        self.flag.remove(Flag::BREAK_COMMAND);
+        self.pc = self.pull_word();
         0
     }
     fn _tmp(&mut self) -> Byte {
