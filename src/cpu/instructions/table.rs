@@ -195,6 +195,23 @@ impl CPU {
         t[Opcode::SbcABY as usize] = Instruction::new("SBC", Self::sbc, AddrMode::ABY, 4);
         t[Opcode::SbcIDX as usize] = Instruction::new("SBC", Self::sbc, AddrMode::IDX, 6);
         t[Opcode::SbcIDY as usize] = Instruction::new("SBC", Self::sbc, AddrMode::IDY, 5);
+        // * CMP Instruction
+        t[Opcode::CmpIMM as usize] = Instruction::new("CMP", Self::cmp, AddrMode::IMM, 2);
+        t[Opcode::CmpZPG as usize] = Instruction::new("CMP", Self::cmp, AddrMode::ZPG, 3);
+        t[Opcode::CmpZPX as usize] = Instruction::new("CMP", Self::cmp, AddrMode::ZPX, 4);
+        t[Opcode::CmpABS as usize] = Instruction::new("CMP", Self::cmp, AddrMode::ABS, 4);
+        t[Opcode::CmpABX as usize] = Instruction::new("CMP", Self::cmp, AddrMode::ABX, 4);
+        t[Opcode::CmpABY as usize] = Instruction::new("CMP", Self::cmp, AddrMode::ABY, 4);
+        t[Opcode::CmpIDX as usize] = Instruction::new("CMP", Self::cmp, AddrMode::IDX, 6);
+        t[Opcode::CmpIDY as usize] = Instruction::new("CMP", Self::cmp, AddrMode::IDY, 5);
+        // * CPX Instruction
+        t[Opcode::CpxIMM as usize] = Instruction::new("CPX", Self::cpx, AddrMode::IMM, 2);
+        t[Opcode::CpxZPG as usize] = Instruction::new("CPX", Self::cpx, AddrMode::ZPG, 3);
+        t[Opcode::CpxABS as usize] = Instruction::new("CPX", Self::cpx, AddrMode::ABS, 4);
+        // * CPY Instruction
+        t[Opcode::CpyIMM as usize] = Instruction::new("CPY", Self::cpy, AddrMode::IMM, 2);
+        t[Opcode::CpyZPG as usize] = Instruction::new("CPY", Self::cpy, AddrMode::ZPG, 3);
+        t[Opcode::CpyABS as usize] = Instruction::new("CPY", Self::cpy, AddrMode::ABS, 4);
         t
     };
 
@@ -474,6 +491,30 @@ impl CPU {
         self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
         self.flag.set(Flag::CARRY, (tmp & 0x100) != 0);
         self.a = tmp as Byte;
+        0
+    }
+    fn cmp(&mut self) -> Byte {
+        self.fetch();
+        let tmp = self.a.wrapping_sub(self.fetched);
+        self.flag.set(Flag::CARRY, self.a >= self.fetched);
+        self.flag.set(Flag::ZERO, tmp == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        0
+    }
+    fn cpx(&mut self) -> Byte {
+        self.fetch();
+        let tmp = self.x.wrapping_sub(self.fetched);
+        self.flag.set(Flag::CARRY, self.x >= self.fetched);
+        self.flag.set(Flag::ZERO, tmp == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
+        0
+    }
+    fn cpy(&mut self) -> Byte {
+        self.fetch();
+        let tmp = self.y.wrapping_sub(self.fetched);
+        self.flag.set(Flag::CARRY, self.y >= self.fetched);
+        self.flag.set(Flag::ZERO, tmp == 0);
+        self.flag.set(Flag::NEGATIVE, (tmp & 0x80) != 0);
         0
     }
     fn _tmp(&mut self) -> Byte {

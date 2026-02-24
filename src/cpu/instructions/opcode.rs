@@ -634,6 +634,79 @@ pub enum Opcode {
     /// |--------|-------|--------|
     /// | 0xF1 | 2 | 5 (+1 if page crossed) |
     SbcIDY = 0xF1,
+    // * [CMP] Compare Accumulator
+    /// ### Compare Accumulator Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xC9 | 2 | 2 |
+    CmpIMM = 0xC9,
+    /// ### Compare Accumulator Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xC5 | 2 | 3 |
+    CmpZPG = 0xC5,
+    /// ### Compare Accumulator Zero Page X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xD5 | 2 | 4 |
+    CmpZPX = 0xD5,
+    /// ### Compare Accumulator Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xCD | 3 | 4 |
+    CmpABS = 0xCD,
+    /// ### Compare Accumulator Absolute X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xDD | 3 | 4 (+1 if page crossed) |
+    CmpABX = 0xDD,
+    /// ### Compare Accumulator Absolute Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xD9 | 3 | 4 (+1 if page crossed) |
+    CmpABY = 0xD9,
+    /// ### Compare Accumulator Indexed Indirect X
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xC1 | 2 | 6 |
+    CmpIDX = 0xC1,
+    /// ### Compare Accumulator Indirect Indexed Y
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xD1 | 2 | 5 (+1 if page crossed) |
+    CmpIDY = 0xD1,
+    // * [CPX] Compare X Register
+    /// ### Compare X Register Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xE0 | 2 | 2 |
+    CpxIMM = 0xE0,
+    /// ### Compare X Register Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xE4 | 2 | 3 |
+    CpxZPG = 0xE4,
+    /// ### Compare X Register Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xEC | 3 | 4 |
+    CpxABS = 0xEC,
+    // * [CPY] Compare Y Register
+    /// ### Compare Y Register Immediate
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xC0 | 2 | 2 |
+    CpyIMM = 0xC0,
+    /// ### Compare Y Register Zero Page
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xC4 | 2 | 3 |
+    CpyZPG = 0xC4,
+    /// ### Compare Y Register Absolute
+    /// | Opcode | Bytes | Cycles |
+    /// |--------|-------|--------|
+    /// | 0xCC | 3 | 4 |
+    CpyABS = 0xCC,
 }
 
 impl TryFrom<Byte> for Opcode {
@@ -800,7 +873,24 @@ impl TryFrom<Byte> for Opcode {
             x if x == Self::SbcABX as Byte => Ok(Self::SbcABX),
             x if x == Self::SbcABY as Byte => Ok(Self::SbcABY),
             x if x == Self::SbcIDX as Byte => Ok(Self::SbcIDX),
-            x if x == Self::SbcIDY as Byte => Ok(Self::SbcIDY),
+            // * [CMP]
+            x if x == Self::CmpIMM as Byte => Ok(Self::CmpIMM),
+            x if x == Self::CmpZPG as Byte => Ok(Self::CmpZPG),
+            x if x == Self::CmpZPX as Byte => Ok(Self::CmpZPX),
+
+            x if x == Self::CmpABS as Byte => Ok(Self::CmpABS),
+            x if x == Self::CmpABX as Byte => Ok(Self::CmpABX),
+            x if x == Self::CmpABY as Byte => Ok(Self::CmpABY),
+            x if x == Self::CmpIDX as Byte => Ok(Self::CmpIDX),
+            x if x == Self::CmpIDY as Byte => Ok(Self::CmpIDY),
+            // * [CPX]
+            x if x == Self::CpxIMM as Byte => Ok(Self::CpxIMM),
+            x if x == Self::CpxZPG as Byte => Ok(Self::CpxZPG),
+            x if x == Self::CpxABS as Byte => Ok(Self::CpxABS),
+            // * [CPY]
+            x if x == Self::CpyIMM as Byte => Ok(Self::CpyIMM),
+            x if x == Self::CpyZPG as Byte => Ok(Self::CpyZPG),
+            x if x == Self::CpyABS as Byte => Ok(Self::CpyABS),
             _ => Err("unknown CPU instruction"),
         }
     }
